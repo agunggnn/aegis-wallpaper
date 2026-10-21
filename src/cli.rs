@@ -59,6 +59,12 @@ pub enum Commands {
     List,
     /// Switch active wallpaper
     Switch { identifier: String },
+    /// Run real-time desktop click input bridge & tactile audio synthesizer
+    Bridge {
+        /// Optional path to WAV sound file to play on click
+        #[arg(long)]
+        sound: Option<String>,
+    },
     /// Deploy interactive wallpaper suite
     Deploy {
         #[arg(long)]

@@ -78,6 +78,19 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // 4b. Input Bridge
+    if let Some(Commands::Bridge { sound }) = &cli.command {
+        println!("🛡️ Starting Sovereign Desktop Input Bridge...");
+        let workerw = engine::workerw::Win32DesktopHook::locate_or_spawn_workerw()?;
+        let default_sound = "C:\\Users\\agung\\AppData\\Local\\Lively Wallpaper\\Library\\wallpapers\\aegis_interactive\\audio\\mechanical.wav";
+        let snd_path = sound.as_deref().unwrap_or(default_sound);
+        println!("🎯 WorkerW HWND: {:?}", workerw);
+        println!("🔊 Click Sound Profile: {}", snd_path);
+        println!("⚡ Bridge active. Click on your desktop to test tactile audio & fluid ripples!");
+        engine::bridge::DesktopInputBridge::run(workerw, Some(snd_path))?;
+        return Ok(());
+    }
+
     // 5. Deploy Interactive
     if cli.deploy_interactive || matches!(cli.command, Some(Commands::Deploy { .. })) {
         println!("🚀 Scaffolding Aegis Interactive Live Wallpaper Suite...");

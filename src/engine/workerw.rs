@@ -44,38 +44,55 @@ pub struct Win32DesktopHook;
 
 impl Win32DesktopHook {
     pub fn locate_or_spawn_workerw() -> Result<HWND> {
-        unsafe {
-            let progman_name: Vec<u16> = "Progman\0".encode_utf16().collect();
-            let progman = FindWindowW(PCWSTR::from_raw(progman_name.as_ptr()), PCWSTR::null())
-                .map_err(|e| anyhow!("Could not find Progman window: {:?}", e))?;
+        // Run in dedicated thread to ensure SetThreadDesktop succeeds without ERROR_BUSY
+        let raw_handle = std::thread::spawn(|| -> Result<usize> {
+            unsafe {
+                let default_name: Vec<u16> = "Default\0".encode_utf16().collect();
+                if let Ok(hdesk) = windows::Win32::System::StationsAndDesktops::OpenDesktopW(
+                    PCWSTR::from_raw(default_name.as_ptr()),
+                    windows::Win32::System::StationsAndDesktops::DESKTOP_CONTROL_FLAGS(0),
+                    false,
+                    0x01FF,
+                ) {
+                    let _ = windows::Win32::System::StationsAndDesktops::SetThreadDesktop(hdesk);
+                }
 
-            if progman.0.is_null() {
-                return Err(anyhow!("Progman window handle is null"));
+                let progman_name: Vec<u16> = "Progman\0".encode_utf16().collect();
+                let progman = FindWindowW(PCWSTR::from_raw(progman_name.as_ptr()), PCWSTR::null())
+                    .map_err(|e| anyhow!("Could not find Progman window: {:?}", e))?;
+
+                if progman.0.is_null() {
+                    return Err(anyhow!("Progman window handle is null"));
+                }
+
+                // Send 0x052C to Progman to spawn the WorkerW behind desktop icons
+                let mut result: usize = 0;
+                let _ = SendMessageTimeoutW(
+                    progman,
+                    0x052C,
+                    windows::Win32::Foundation::WPARAM(0x0000000D),
+                    LPARAM(0),
+                    SMTO_NORMAL,
+                    1000,
+                    Some(&mut result as *mut usize),
+                );
+
+                // Enumerate windows to locate the spawned WorkerW
+                WORKERW_HWND.store(0, Ordering::SeqCst);
+                let _ = EnumWindows(Some(enum_windows_callback), LPARAM(0));
+
+                let handle = WORKERW_HWND.load(Ordering::SeqCst);
+                if handle != 0 {
+                    Ok(handle)
+                } else {
+                    // Fallback to progman
+                    Ok(progman.0 as usize)
+                }
             }
+        })
+        .join()
+        .map_err(|_| anyhow!("Thread panicked while locating WorkerW"))??;
 
-            // Send 0x052C to Progman to spawn the WorkerW behind desktop icons
-            let mut result: usize = 0;
-            let _ = SendMessageTimeoutW(
-                progman,
-                0x052C,
-                windows::Win32::Foundation::WPARAM(0x0000000D),
-                LPARAM(0),
-                SMTO_NORMAL,
-                1000,
-                Some(&mut result as *mut usize),
-            );
-
-            // Enumerate windows to locate the spawned WorkerW
-            WORKERW_HWND.store(0, Ordering::SeqCst);
-            let _ = EnumWindows(Some(enum_windows_callback), LPARAM(0));
-
-            let handle = WORKERW_HWND.load(Ordering::SeqCst);
-            if handle != 0 {
-                Ok(HWND(handle as *mut std::ffi::c_void))
-            } else {
-                // Fallback to progman
-                Ok(progman)
-            }
-        }
+        Ok(HWND(raw_handle as *mut std::ffi::c_void))
     }
 }
