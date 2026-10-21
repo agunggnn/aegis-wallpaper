@@ -179,6 +179,12 @@ impl McpServer {
     async fn handle_wallpaper_set_property(&self, args: Value) -> ToolCallResult {
         let mut updated = Vec::new();
 
+        if let Some(scene) = args.get("active_scene").and_then(|v| v.as_u64()) {
+            if let Ok(_) = self.bridge.set_property(None, "activeScene", json!(scene)) {
+                updated.push(format!("activeScene = {}", scene));
+            }
+        }
+
         // Sound pack: 0: Rune Chime, 1: Mechanical Switch, 2: Water Droplet, 3: Cyber Pulse, 4: Muted
         if let Some(sound_pack) = args.get("sound_pack").and_then(|v| v.as_str()) {
             let idx = match sound_pack {

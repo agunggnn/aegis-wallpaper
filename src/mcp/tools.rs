@@ -35,10 +35,16 @@ pub fn get_tool_definitions() -> Vec<ToolDefinition> {
         },
         ToolDefinition {
             name: "wallpaper_set_property".into(),
-            description: "Dynamically customize active wallpaper properties in real time (e.g. click sound pack, volume, ripple effect, particle count, clock).".into(),
+            description: "Dynamically customize active wallpaper properties in real time (e.g. active video scene, click sound pack, volume, ripple effect, particle count, clock).".into(),
             input_schema: json!({
                 "type": "object",
                 "properties": {
+                    "active_scene": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2,
+                        "description": "Index of live animated 4K video scene (0: Citadel Twilight Live, 1: Mystical Forest Shrine Live, 2: Mountain Aurora Fortress Live)."
+                    },
                     "sound_pack": {
                         "type": "string",
                         "enum": ["Fantasy Rune Chime", "Mechanical Switch", "Water Droplet", "Cyber Pulse", "Muted"],

@@ -31,14 +31,13 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
     let js_dir = out.join("js");
     fs::create_dir_all(&js_dir).context("Failed to create wallpaper directory structure")?;
 
-    // Copy or set background image
-    let mut bg_rel_name = "background.jpg".to_string();
+    // Copy or set background image if provided
     if let Some(ref bg_path) = opts.background_image {
         if bg_path.exists() {
             let ext = bg_path.extension().and_then(|s| s.to_str()).unwrap_or("jpg");
-            bg_rel_name = format!("background.{}", ext);
+            let bg_rel_name = format!("background.{}", ext);
             let dest = out.join(&bg_rel_name);
-            fs::copy(bg_path, &dest)?;
+            let _ = fs::copy(bg_path, &dest);
         }
     } else {
         // Fallback: look for Citadel in Pictures/Wallpapers
@@ -49,13 +48,24 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
         }
     }
 
+    // Copy live video files if available
+    let collection_dir = Path::new("C:\\Users\\agung\\Pictures\\Wallpapers\\Fantasy_RPG_Collection");
+    if collection_dir.exists() {
+        for file in &["01_citadel_twilight_live.mp4", "02_mystical_forest_shrine_live.mp4", "03_mountain_aurora_snow_live.mp4"] {
+            let src = collection_dir.join(file);
+            if src.exists() {
+                let _ = fs::copy(&src, out.join(file));
+            }
+        }
+    }
+
     // 1. LivelyInfo.json
     let lively_info = serde_json::json!({
         "AppVersion": "2.2.1.0",
         "Title": opts.title,
         "Thumbnail": "thumbnail.jpg",
         "Preview": "preview.gif",
-        "Desc": "Interactive Live Wallpaper with tactile click audio, 2D fluid ripple physics, and reactive fireflies.",
+        "Desc": "Interactive Live Wallpaper with live 4K video, tactile click audio, 2D fluid ripple physics, and reactive fireflies.",
         "Author": "Aegis Fleet",
         "License": "MIT",
         "Contact": "https://github.com/agunggnn/aegis-wallpaper",
@@ -75,6 +85,16 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
 
     // 2. LivelyProperties.json
     let lively_props = serde_json::json!({
+        "activeScene": {
+            "type": "dropdown",
+            "value": 0,
+            "items": [
+                "01 - Citadel Twilight Live (Flowing River & Sun Rays)",
+                "02 - Mystical Forest Shrine Live (Pulsing Runes & Mist)",
+                "03 - Mountain Aurora Fortress Live (Northern Lights & Snow)"
+            ],
+            "text": "Live 4K Animated Scene"
+        },
         "soundPack": {
             "type": "dropdown",
             "value": default_pack_idx,
@@ -118,6 +138,10 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <video id="bgVideo" autoplay loop muted playsinline preload="auto">
+        <source src="01_citadel_twilight_live.mp4" type="video/mp4">
+    </video>
+    
     <canvas id="wallpaperCanvas"></canvas>
     
     <div id="hudClock" class="hud-container hidden">
@@ -150,24 +174,38 @@ html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
+#bgVideo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 1;
+    display: block;
+}
+
 #wallpaperCanvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
+    z-index: 2;
     display: block;
     cursor: default;
+    background: transparent;
 }
 
 .hud-container {
     position: fixed;
     top: 80px;
     right: 80px;
-    color: rgba(255, 255, 255, 0.9);
+    z-index: 3;
+    color: rgba(255, 255, 255, 0.95);
     text-align: right;
     pointer-events: none;
-    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(80, 180, 255, 0.4);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(80, 180, 255, 0.5);
     transition: opacity 0.5s ease;
 }
 
@@ -184,7 +222,7 @@ html, body {
 #dateDisplay {
     font-size: 1.25rem;
     font-weight: 300;
-    color: rgba(210, 235, 255, 0.75);
+    color: rgba(210, 235, 255, 0.85);
     letter-spacing: 2px;
     text-transform: uppercase;
 }
@@ -532,53 +570,59 @@ window.fireflyEngine = new FireflyEngine(50);
     fs::write(js_dir.join("particles.js"), particles_js)?;
 
     // 8. js/main.js - Event coordination and Lively Property Listener
-    let main_js = format!(r#"// Main Coordinator for Aegis Interactive Live Wallpaper
+    let main_js = r#"// Main Coordinator for Aegis Interactive Live Wallpaper
+const bgVideo = document.getElementById('bgVideo');
 const canvas = document.getElementById('wallpaperCanvas');
 const ctx = canvas.getContext('2d');
-const bgImage = new Image();
-bgImage.src = '{bg_rel_name}';
 
-let isImageLoaded = false;
-bgImage.onload = () => {{
-    isImageLoaded = true;
-}};
+const scenes = [
+    "01_citadel_twilight_live.mp4",
+    "02_mystical_forest_shrine_live.mp4",
+    "03_mountain_aurora_snow_live.mp4"
+];
 
-function resizeCanvas() {{
+function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-}}
+}
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // User Interaction Listeners (Click & Move)
-window.addEventListener('pointerdown', (e) => {{
+window.addEventListener('pointerdown', (e) => {
     window.soundEngine.playClick();
     window.rippleFX.add(e.clientX, e.clientY);
     window.fireflyEngine.scatter(e.clientX, e.clientY);
-}});
+});
 
-window.addEventListener('pointermove', (e) => {{
+window.addEventListener('pointermove', (e) => {
     window.fireflyEngine.mouseX = e.clientX;
     window.fireflyEngine.mouseY = e.clientY;
-}});
+});
 
 // Clock HUD
-function updateClock() {{
+function updateClock() {
     const now = new Date();
     const timeElem = document.getElementById('timeDisplay');
     const dateElem = document.getElementById('dateDisplay');
-    if (timeElem && dateElem) {{
-        timeElem.textContent = now.toLocaleTimeString([], {{ hour: '2-digit', minute: '2-digit' }});
-        dateElem.textContent = now.toLocaleDateString([], {{ weekday: 'long', month: 'long', day: 'numeric' }});
-    }}
-}}
+    if (timeElem && dateElem) {
+        timeElem.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        dateElem.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+}
 setInterval(updateClock, 1000);
 updateClock();
 
 // Lively Property Listener API
-// Called dynamically by Lively Wallpaper when properties are changed in GUI
-function livelyPropertyListener(name, val) {{
-    switch (name) {{
+function livelyPropertyListener(name, val) {
+    switch (name) {
+        case "activeScene":
+            const idx = parseInt(val) || 0;
+            if (scenes[idx]) {
+                bgVideo.src = scenes[idx];
+                bgVideo.play().catch(e => console.log("Video play error:", e));
+            }
+            break;
         case "soundPack":
             window.soundEngine.setPack(val);
             break;
@@ -593,33 +637,19 @@ function livelyPropertyListener(name, val) {{
             break;
         case "showClock":
             const hud = document.getElementById('hudClock');
-            if (hud) {{
+            if (hud) {
                 if (val) hud.classList.remove('hidden');
                 else hud.classList.add('hidden');
-            }}
+            }
             break;
-    }}
-}}
+    }
+}
 
-// 60FPS Render Loop
-function render() {{
+// 60FPS Physics Render Loop on top of live video
+function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Background
-    if (isImageLoaded) {{
-        const hRatio = canvas.width / bgImage.width;
-        const vRatio = canvas.height / bgImage.height;
-        const ratio = Math.max(hRatio, vRatio);
-        const centerShiftX = (canvas.width - bgImage.width * ratio) / 2;
-        const centerShiftY = (canvas.height - bgImage.height * ratio) / 2;
-        ctx.drawImage(bgImage, 0, 0, bgImage.width, bgImage.height,
-            centerShiftX, centerShiftY, bgImage.width * ratio, bgImage.height * ratio);
-    }} else {{
-        ctx.fillStyle = '#0a1020';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }}
-
-    // Update & Render Physics Layers
+    // Update & Render Physics Layers (Ripple and Fireflies)
     window.rippleFX.update();
     window.rippleFX.render(ctx);
 
@@ -627,9 +657,9 @@ function render() {{
     window.fireflyEngine.render(ctx);
 
     requestAnimationFrame(render);
-}}
+}
 requestAnimationFrame(render);
-"#, bg_rel_name = bg_rel_name);
+"#;
     fs::write(js_dir.join("main.js"), main_js)?;
 
     Ok(out.to_path_buf())
