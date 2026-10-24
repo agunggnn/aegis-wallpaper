@@ -62,6 +62,7 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
             "08_cyber_aegis_megacity_live.mp4",
             "09_autumn_dragon_valley_live.mp4",
             "10_celestial_starfall_spire_live.mp4",
+            "11_ethereal_dreamscript_live.mp4",
             "01_citadel_twilight_4k.jpg",
             "02_mystical_forest_shrine_4k.jpg",
             "03_mountain_aurora_fortress_4k.jpg",
@@ -72,6 +73,7 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
             "08_cyber_aegis_megacity_4k.jpg",
             "09_autumn_dragon_valley_4k.jpg",
             "10_celestial_starfall_spire_4k.jpg",
+            "11_ethereal_dreamscript_4k.jpg",
         ] {
             let src = collection_dir.join(file);
             if src.exists() {
@@ -119,7 +121,8 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
                 "07 - Sunken Coral Atlantis (Abyssal Caustics & Drifting Plankton)",
                 "08 - Cyber-Aegis Neo-Tokyo Bastion (Holo Shield & Wet Reflections)",
                 "09 - Autumn Dragon Valley (Cascading Falls & Swirling Maple)",
-                "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)"
+                "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)",
+                "11 - Ethereal Dreamscript Nexus (PS5 Cosmic Ribbon & FFXII Sky City)"
             ],
             "text": "Live 4K Animated Scene"
         },

@@ -1,7 +1,7 @@
 {
   "activeScene": {
     "type": "dropdown",
-    "value": 9,
+    "value": 10,
     "items": [
       "01 - Citadel Twilight Live (Flowing River & Sun Rays)",
       "02 - Mystical Forest Shrine Live (Pulsing Runes & Mist)",
@@ -12,7 +12,8 @@
       "07 - Sunken Coral Atlantis (Abyssal Caustics & Drifting Plankton)",
       "08 - Cyber-Aegis Neo-Tokyo Bastion (Holo Shield & Wet Reflections)",
       "09 - Autumn Dragon Valley (Cascading Falls & Swirling Maple)",
-      "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)"
+      "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)",
+      "11 - Ethereal Dreamscript Nexus (PS5 Cosmic Ribbon & FFXII Sky City)"
     ],
     "text": "Live 4K Animated Scene"
   },

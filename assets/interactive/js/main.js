@@ -25,7 +25,8 @@ const scenes = [
     { id: "atlantis", image: "07_sunken_coral_atlantis_4k.jpg", file: "07_sunken_coral_atlantis_live.mp4", name: "SUNKEN CORAL ATLANTIS" },
     { id: "cyber", image: "08_cyber_aegis_megacity_4k.jpg", file: "08_cyber_aegis_megacity_live.mp4", name: "CYBER-AEGIS BASTION" },
     { id: "valley", image: "09_autumn_dragon_valley_4k.jpg", file: "09_autumn_dragon_valley_live.mp4", name: "AUTUMN DRAGON VALLEY" },
-    { id: "starfall", image: "10_celestial_starfall_spire_4k.jpg", file: "10_celestial_starfall_spire_live.mp4", name: "STARFALL OBSERVATORY" }
+    { id: "starfall", image: "10_celestial_starfall_spire_4k.jpg", file: "10_celestial_starfall_spire_live.mp4", name: "STARFALL OBSERVATORY" },
+    { id: "dreamscript", image: "11_ethereal_dreamscript_4k.jpg", file: "11_ethereal_dreamscript_live.mp4", name: "ETHEREAL DREAMSCRIPT NEXUS" }
 ];
 
 let currentSceneIdx = 0;

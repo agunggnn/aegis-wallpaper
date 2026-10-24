@@ -249,6 +249,28 @@ class RealmFXEngine {
                 });
             }
         }
+
+        // -------------------------------------------------------------
+        // Realm 11 (idx = 10): Ethereal Dreamscript Nexus
+        // PS5 Cosmic Ribbons + FFXII Floating Magicite Crystals + Stardust
+        // -------------------------------------------------------------
+        if (idx === 10) {
+            this.stardust = [];
+            const count = this.ultraLight ? 30 : 65;
+            for (let i = 0; i < count; i++) {
+                this.stardust.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: -0.3 - Math.random() * 0.7,
+                    size: 1.0 + Math.random() * 2.5,
+                    alpha: 0.2 + Math.random() * 0.6,
+                    color: Math.random() > 0.4 ? "rgba(147, 197, 253," : (Math.random() > 0.5 ? "rgba(216, 180, 254," : "rgba(253, 230, 138,"),
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 1.0 + Math.random() * 2.0
+                });
+            }
+        }
     }
 
     // =========================================================================
@@ -269,6 +291,7 @@ class RealmFXEngine {
             case 0: this.renderRealm01_Citadel(ctx); break;
             case 1: this.renderRealm02_ForestShrine(ctx); break;
             case 2: this.renderRealm03_MountainAurora(ctx); break;
+            case 10: this.renderRealm11_Dreamscript(ctx); break;
         }
     }
 
@@ -758,6 +781,65 @@ class RealmFXEngine {
             ctx.beginPath();
             ctx.arc(snow.x, snow.y, snow.radius, 0, Math.PI * 2);
             ctx.fill();
+        }
+    }
+
+    // =========================================================================
+    // REALM 11: Ethereal Dreamscript Nexus (PS5 Cosmic Energy Ribbons & FFXII Sky City)
+    // =========================================================================
+    renderRealm11_Dreamscript(ctx) {
+        const w = this.width;
+        const h = this.height;
+
+        // 1. Radiant Magicite Core Pulses (Deep Cyan & Amethyst Violet)
+        const coreX = w * 0.50;
+        const coreY = h * 0.48;
+        const magicitePulse = Math.sin(this.time * 0.8) * 0.5 + 0.5;
+        const coreGrad = ctx.createRadialGradient(coreX, coreY, 20, coreX, coreY, w * 0.32);
+        coreGrad.addColorStop(0, `rgba(56, 189, 248, ${0.12 * magicitePulse})`);
+        coreGrad.addColorStop(0.4, `rgba(168, 85, 247, ${0.07 * magicitePulse})`);
+        coreGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = coreGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. Flowing PS5 Cosmic Ribbons across twilight sea
+        ctx.save();
+        for (let r = 0; r < 3; r++) {
+            ctx.beginPath();
+            const yOffset = h * (0.62 + r * 0.08);
+            const speed = 0.6 + r * 0.25;
+            const amp = 24 + r * 12;
+            ctx.moveTo(0, yOffset + Math.sin(this.time * speed) * amp);
+
+            for (let x = 0; x <= w; x += 40) {
+                const wave = Math.sin(x * 0.003 + this.time * speed + r) * amp
+                           + Math.cos(x * 0.007 - this.time * 0.5) * (amp * 0.5);
+                ctx.lineTo(x, yOffset + wave);
+            }
+
+            const alpha = 0.04 + 0.03 * Math.sin(this.time * 1.2 + r);
+            ctx.strokeStyle = r === 0 ? `rgba(96, 165, 250, ${alpha})` : (r === 1 ? `rgba(192, 132, 252, ${alpha})` : `rgba(251, 191, 36, ${alpha * 0.8})`);
+            ctx.lineWidth = 14 + r * 6;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 3. Floating Ethereal Magicite Stardust
+        if (this.stardust) {
+            for (const p of this.stardust) {
+                p.y += p.vy;
+                p.x += p.vx + Math.sin(this.time * p.speed + p.phase) * 0.35;
+                if (p.y < -10) {
+                    p.y = h + 10;
+                    p.x = Math.random() * w;
+                }
+                const tw = Math.sin(this.time * p.speed + p.phase) * 0.5 + 0.5;
+                ctx.fillStyle = `${p.color} ${p.alpha * (0.4 + 0.6 * tw)})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
 }
