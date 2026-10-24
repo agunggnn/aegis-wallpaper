@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aegis Sovereign Live Wallpaper & System Telemetry</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 4K UHD Master Artwork Layer (Pristine Razor-Sharp Resolution) -->
+    <img id="bgImage" class="bg-layer active" src="01_citadel_twilight_4k.jpg" alt="Wallpaper Background">
+    
+    <!-- Optional Hardware-Decoded Live MP4 Video Layer -->
+    <video id="bgVideo" class="bg-layer" loop muted playsinline preload="none"></video>
+    
+    <!-- WebGL Hardware Living Shader Engine (Vortex Swirl, Flowing Rivers, Magma Churn, 2.5D Parallax) -->
+    
+    <canvas id="wallpaperCanvas"></canvas>
+    
+    <!-- Gaming, Telemetry & Audio Lounge Interface Layer -->
+    <div id="gameHud" class="game-hud">
+        <!-- Top-Left: System Hardware Resource Monitor -->
+        <div class="resource-monitor-card" id="resourceMonitor">
+            <div class="monitor-header">
+                <div class="monitor-chip">
+                    <span class="pulse-dot"></span>
+                    <span class="chip-text">SYSTEM TELEMETRY</span>
+                </div>
+                <div class="monitor-status" id="monitorStatus">ONLINE</div>
+            </div>
+
+            <!-- CPU Metric Bar -->
+            <div class="metric-row">
+                <div class="metric-header">
+                    <div class="metric-badge cpu-badge">CPU</div>
+                    <div class="metric-subtext" id="cpuLabel">AMD Ryzen 7 5700X</div>
+                    <div class="metric-pct" id="cpuPct">16%</div>
+                </div>
+                <div class="metric-track">
+                    <div class="metric-fill cpu-fill" id="cpuBar" style="width: 16%"></div>
+                </div>
+            </div>
+
+            <!-- GPU Metric Bar -->
+            <div class="metric-row">
+                <div class="metric-header">
+                    <div class="metric-badge gpu-badge">GPU</div>
+                    <div class="metric-subtext" id="gpuLabel">NVIDIA GeForce RTX 4070</div>
+                    <div class="metric-pct" id="gpuPct">10%</div>
+                </div>
+                <div class="metric-track">
+                    <div class="metric-fill gpu-fill" id="gpuBar" style="width: 10%"></div>
+                </div>
+            </div>
+
+            <!-- MEM Metric Bar -->
+            <div class="metric-row">
+                <div class="metric-header">
+                    <div class="metric-badge mem-badge">MEM</div>
+                    <div class="metric-subtext" id="memLabel">19.8 / 40.0 GB</div>
+                    <div class="metric-pct" id="memPct">50%</div>
+                </div>
+                <div class="metric-track">
+                    <div class="metric-fill mem-fill" id="memBar" style="width: 50%"></div>
+                </div>
+            </div>
+
+            <!-- DISK I/O Metric Bar -->
+            <div class="metric-row">
+                <div class="metric-header">
+                    <div class="metric-badge disk-badge">DISK I/O</div>
+                    <div class="metric-subtext" id="diskLabel">R: 0.0 MB/s • W: 0.0 MB/s</div>
+                    <div class="metric-pct" id="diskPct">IDLE</div>
+                </div>
+                <div class="metric-track">
+                    <div class="metric-fill disk-fill" id="diskBar" style="width: 5%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top-Right: Realm Compass & Quest Ledger -->
+        <div class="quest-card">
+            <div class="realm-badge">
+                <span class="compass-icon">✦</span>
+                <span id="realmName">CITADEL OF VALERIUS</span>
+            </div>
+            <div class="quest-title">QUEST: SOVEREIGN ASCENDANCY</div>
+            <div class="realm-clock" id="realmClock">12:00:00</div>
+            <div class="auto-timer" id="autoTimerBadge">Auto-Next in 30m</div>
+        </div>
+
+        <!-- Bottom-Left: Sovereign YouTube Audio Lounge Widget -->
+        <div id="ytMusicWidget" class="yt-music-widget collapsed">
+            <!-- Minimized Pill Bar -->
+            <div class="yt-minibar" id="ytMinibar">
+                <div class="yt-mini-icon">
+                    <span class="yt-logo-glow">▶</span>
+                    <div class="yt-eq-bars" id="ytEqBars">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+                <div class="yt-mini-info">
+                    <span class="yt-mini-title" id="ytMiniTitle">Lo-Fi Hip Hop Radio</span>
+                    <span class="yt-mini-artist" id="ytMiniArtist">Lofi Girl 24/7 Stream</span>
+                </div>
+                <div class="yt-mini-controls">
+                    <button class="yt-btn yt-play-btn" id="btnYtPlayPause" title="Play / Pause">▶</button>
+                    <button class="yt-btn yt-expand-btn" id="btnYtExpand" title="Expand Audio Lounge (Hotkey: [M])">⤢</button>
+                </div>
+            </div>
+
+            <!-- Expanded Floating Card -->
+            <div class="yt-expanded-card" id="ytExpandedCard">
+                <div class="yt-card-header">
+                    <div class="yt-header-title">
+                        <span class="yt-header-dot"></span>
+                        <span>YOUTUBE AUDIO LOUNGE</span>
+                    </div>
+                    <div class="yt-header-actions">
+                        <button class="yt-btn" id="btnYtOpenExternal" title="Open Stream in Browser" style="font-size: 13px; margin-right: 4px;">↗</button>
+                        <button class="yt-btn yt-close-btn" id="btnYtCollapse" title="Collapse (Hotkey: [M])">✕</button>
+                    </div>
+                </div>
+
+                <!-- Embedded YouTube Player Container -->
+                <div class="yt-player-container">
+                    <div id="ytPlayerIframe"></div>
+                </div>
+
+                <!-- Auto-Detected Windows Clipboard Banner -->
+                <div class="yt-clip-banner" id="ytClipBanner">
+                    <div class="yt-clip-text">
+                        <div class="yt-clip-tag">📋 CLIPBOARD DETECTED</div>
+                        <div class="yt-clip-url" id="ytClipUrl">https://www.youtube.com/...</div>
+                    </div>
+                    <div class="yt-clip-actions">
+                        <button class="yt-btn yt-clip-play" id="btnClipPlayNow" title="Play Immediately">▶ Play</button>
+                        <button class="yt-btn yt-clip-add" id="btnClipAddList" title="Add to Playlist">➕ Add</button>
+                        <button class="yt-btn yt-clip-dismiss" id="btnClipDismiss" title="Dismiss">✕</button>
+                    </div>
+                </div>
+
+                <!-- Input & Action Bar: Paste / Real Native Input / Add -->
+                <div class="yt-action-bar">
+                    <button class="yt-btn yt-action-btn yt-btn-paste" id="btnYtPaste" title="One-Click Ingest from Windows Clipboard">📋 Paste from Clipboard</button>
+                    <button class="yt-btn yt-action-btn yt-btn-type" id="btnYtPrompt" title="Open Native Windows Typing Box">✏️ Type / Search</button>
+                    <button class="yt-btn yt-action-btn yt-btn-addcurr" id="btnYtAddCurrent" title="Save Currently Playing Track to History">★ Save</button>
+                </div>
+                <div class="yt-status-msg" id="ytStatusMsg"></div>
+
+                <!-- History Playlist Section -->
+                <div class="yt-playlist-section" id="ytPlaylistSection">
+                    <div class="yt-section-header">
+                        <span class="yt-section-label">📜 PLAYLIST & HISTORY (<span id="ytPlaylistBadgeCount">5</span>)</span>
+                        <div class="yt-playlist-tools">
+                            <button class="yt-btn yt-tool-btn" id="btnPlPrev" title="Previous Track">⏮</button>
+                            <button class="yt-btn yt-tool-btn" id="btnPlNext" title="Next Track">⏭</button>
+                            <button class="yt-btn yt-tool-btn" id="btnPlShuffle" title="Shuffle Play">🔀</button>
+                            <button class="yt-btn yt-tool-btn yt-clear-btn" id="btnPlClear" title="Clear History">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="yt-playlist-list" id="ytPlaylistList">
+                        <!-- Populated by js/youtube.js -->
+                    </div>
+                </div>
+
+                <!-- Audio Volume Slider & Status -->
+                <div class="yt-volume-row">
+                    <span class="yt-vol-icon" id="ytVolIcon">🔊</span>
+                    <input type="range" class="yt-vol-slider" id="ytVolSlider" min="0" max="100" value="80" />
+                    <span class="yt-vol-pct" id="ytVolPct">80%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom-Right: Realm Selector Hotbar (All 10 Realms) -->
+        <div class="realm-hotbar">
+            <button class="hotbar-btn active" id="btnRealm0" data-idx="0">1. Citadel</button>
+            <button class="hotbar-btn" id="btnRealm1" data-idx="1">2. Shrine</button>
+            <button class="hotbar-btn" id="btnRealm2" data-idx="2">3. Aurora</button>
+            <button class="hotbar-btn" id="btnRealm3" data-idx="3">4. Dunes</button>
+            <button class="hotbar-btn" id="btnRealm4" data-idx="4">5. Sky</button>
+            <button class="hotbar-btn" id="btnRealm5" data-idx="5">6. Forge</button>
+            <button class="hotbar-btn" id="btnRealm6" data-idx="6">7. Atlantis</button>
+            <button class="hotbar-btn" id="btnRealm7" data-idx="7">8. Cyber</button>
+            <button class="hotbar-btn" id="btnRealm8" data-idx="8">9. Valley</button>
+            <button class="hotbar-btn" id="btnRealm9" data-idx="9">10. Starfall</button>
+            <button class="hotbar-btn next-btn" id="btnNextRealm">Next ➔</button>
+        </div>
+    </div>
+
+    <script src="js/audio.js"></script>
+    <script src="js/ripple.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/magic.js"></script>
+    <script src="js/sysinfo.js"></script>
+    <script src="js/youtube.js"></script>
+    
+    <script src="js/realm_fx.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

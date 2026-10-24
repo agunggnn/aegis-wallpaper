@@ -278,9 +278,39 @@ impl LivelyBridge {
         }
 
         let formatted = serde_json::to_string_pretty(&props)?;
-        fs::write(&prop_file, formatted)?;
+        fs::write(&prop_file, &formatted)?;
+
+        if let Some(folder_name) = folder.file_name() {
+            let wpdata_file = self.base_dir
+                .join("Library")
+                .join("SaveData")
+                .join("wpdata")
+                .join(folder_name)
+                .join("1")
+                .join("LivelyProperties.json");
+            if wpdata_file.exists() {
+                let _ = fs::write(&wpdata_file, &formatted);
+            }
+        }
 
         Ok(val)
+    }
+
+    pub fn set_realm(&self, realm_num: u32) -> Result<u32> {
+        let idx = (realm_num.saturating_sub(1)).min(9);
+        self.set_property(None, "activeScene", serde_json::json!(idx))?;
+        Ok(idx + 1)
+    }
+
+    pub fn next_realm(&self) -> Result<u32> {
+        let props = self.get_properties(None)?;
+        let cur = props.get("activeScene")
+            .and_then(|v| v.get("value"))
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let next = (cur + 1) % 10;
+        self.set_property(None, "activeScene", serde_json::json!(next))?;
+        Ok((next as u32) + 1)
     }
 
     pub fn get_global_volume(&self) -> Result<u32> {

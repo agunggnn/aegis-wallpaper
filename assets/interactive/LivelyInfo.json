@@ -1,0 +1,13 @@
+{
+  "AppVersion": "2.2.1.0",
+  "Arguments": "--system-information --audio --pause-event false",
+  "Author": "Aegis Fleet",
+  "Contact": "https://github.com/agunggnn/aegis-wallpaper",
+  "Desc": "Interactive Live Wallpaper with system hardware telemetry (CPU, GPU, RAM, Disk), 2D fluid ripple physics, and reactive fireflies.",
+  "FileName": "index.html",
+  "License": "MIT",
+  "Preview": "preview.gif",
+  "Thumbnail": "thumbnail.jpg",
+  "Title": "Sovereign Interactive Fantasy Suite",
+  "Type": 1
+}

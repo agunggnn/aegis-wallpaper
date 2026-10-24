@@ -1,0 +1,114 @@
+{
+  "activeScene": {
+    "type": "dropdown",
+    "value": 9,
+    "items": [
+      "01 - Citadel Twilight Live (Flowing River & Sun Rays)",
+      "02 - Mystical Forest Shrine Live (Pulsing Runes & Mist)",
+      "03 - Mountain Aurora Fortress Live (Northern Lights & Snow)",
+      "04 - Celestial Dunes Oasis (Desert Waters & Twin Moons)",
+      "05 - Floating Sky Citadel of Aetheria (Cloud Falls & Godrays)",
+      "06 - Volcanic Obsidian Forge (Molten Magma & Rising Embers)",
+      "07 - Sunken Coral Atlantis (Abyssal Caustics & Drifting Plankton)",
+      "08 - Cyber-Aegis Neo-Tokyo Bastion (Holo Shield & Wet Reflections)",
+      "09 - Autumn Dragon Valley (Cascading Falls & Swirling Maple)",
+      "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)"
+    ],
+    "text": "Live 4K Animated Scene"
+  },
+  "livingMotion": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Living 4K Pixel Motion (Galaxy Swirl, Flowing Rivers, Magma Churn)"
+  },
+  "parallaxDepth": {
+    "type": "slider",
+    "value": 50,
+    "min": 0,
+    "max": 100,
+    "text": "2.5D Mouse & Ambient Parallax Depth"
+  },
+  "flowSpeed": {
+    "type": "slider",
+    "value": 100,
+    "min": 50,
+    "max": 200,
+    "text": "Living Motion Flow Speed (%)"
+  },
+  "ultraLightMode": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Ultra-Lightweight / Eco Mode (0% CPU, Auto-Pause on Fullscreen)"
+  },
+  "renderEngine": {
+    "type": "dropdown",
+    "value": 1,
+    "items": [
+      "Pure 4K Canvas FX (Lossless Crisp Artwork, Radial Meteors, 0% CPU)",
+      "Hardware Live Video MP4 (Master Rendered Loop from Source)"
+    ],
+    "text": "Motion Render Engine"
+  },
+  "autoRotate": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Auto-Rotate Realms (Hands-Free Progression)"
+  },
+  "rotateInterval": {
+    "type": "dropdown",
+    "value": 1,
+    "items": [
+      "15 Minutes",
+      "30 Minutes",
+      "1 Hour",
+      "2 Hours",
+      "3 Hours"
+    ],
+    "text": "Auto-Rotation Interval"
+  },
+  "gameHud": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Show Resource Monitor & Gaming HUD"
+  },
+  "magicFx": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Arcane Magic Circles & Blade Slashes on Click"
+  },
+  "rippleEffect": {
+    "type": "checkbox",
+    "value": true,
+    "text": "Fluid Water Ripple on Click"
+  },
+  "fireflyCount": {
+    "type": "slider",
+    "value": 45,
+    "min": 0,
+    "max": 150,
+    "text": "Interactive Firefly Density"
+  },
+  "soundPack": {
+    "type": "dropdown",
+    "value": 4,
+    "items": [
+      "Fantasy Rune Chime",
+      "Mechanical Switch",
+      "Water Droplet",
+      "Cyber Pulse",
+      "Muted (Silent)"
+    ],
+    "text": "Click Sound Effect"
+  },
+  "soundVolume": {
+    "type": "slider",
+    "value": 0,
+    "min": 0,
+    "max": 100,
+    "text": "Click Sound Volume"
+  },
+  "btnNextScene": {
+    "type": "button",
+    "text": "Skip to Next Realm Now"
+  }
+}

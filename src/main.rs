@@ -78,16 +78,80 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
+    // 4a. Live RPG Realm Switching
+    if let Some(realm) = cli.realm {
+        let actual = bridge.set_realm(realm)?;
+        let realm_names = [
+            "01 - Valerius Twilight Citadel",
+            "02 - Eldertree Mystical Shrine",
+            "03 - Frostpeak Aurora Fortress",
+            "04 - Celestial Dunes Oasis",
+            "05 - Floating Sky Citadel of Aetheria",
+            "06 - Volcanic Obsidian Forge",
+            "07 - Sunken Coral Atlantis",
+            "08 - Cyber-Aegis Neo-Tokyo Bastion",
+            "09 - Autumn Dragon Valley",
+            "10 - Celestial Starfall Observatory",
+        ];
+        let name = realm_names.get((actual as usize).saturating_sub(1)).unwrap_or(&"Unknown Realm");
+        println!("🌌 Switched Live Realm to [{}]: {}", actual, name);
+        println!("💡 Tip: If desktop doesn't update instantly, click any desktop Hotbar button or run --restart");
+        return Ok(());
+    }
+
+    if cli.next {
+        let actual = bridge.next_realm()?;
+        println!("🌌 Advanced to next Live Realm: [{}]", actual);
+        return Ok(());
+    }
+
+    // 4b. Live Fullscreen Browser Preview
+    if cli.preview {
+        let html_path = "C:\\Users\\agung\\Pictures\\Wallpapers\\Interactive_Fantasy_Suite\\index.html";
+        println!("🌐 Opening Sovereign 4K Live Wallpaper in browser preview...");
+        let _ = std::process::Command::new("cmd")
+            .args(["/c", "start", "", html_path])
+            .spawn();
+        println!("✨ Press F11 in browser for Fullscreen immersion!");
+        println!("🎮 All keyboard shortcuts [1]-[9], [0], [N], [P], [L] work interactively!");
+        return Ok(());
+    }
+
+    // 4c. Restart Lively Wallpaper
+    if cli.restart {
+        println!("🔄 Restarting Lively Wallpaper on Default desktop...");
+        let _ = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", "Get-Process -Name Lively* -ErrorAction SilentlyContinue | Stop-Process -Force"])
+            .status();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let _ = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", "Start-Process 'C:\\Users\\agung\\AppData\\Local\\Programs\\Lively Wallpaper\\Lively.exe'"])
+            .spawn();
+        println!("✅ Lively Wallpaper restarted.");
+        return Ok(());
+    }
+
     // 4b. Input Bridge
     if let Some(Commands::Bridge { sound }) = &cli.command {
-        println!("🛡️ Starting Sovereign Desktop Input Bridge...");
+        println!("🛡️ Starting Sovereign Desktop Input Bridge & Telemetry Server...");
         let workerw = engine::workerw::Win32DesktopHook::locate_or_spawn_workerw()?;
-        let default_sound = "C:\\Users\\agung\\AppData\\Local\\Lively Wallpaper\\Library\\wallpapers\\aegis_interactive\\audio\\mechanical.wav";
-        let snd_path = sound.as_deref().unwrap_or(default_sound);
+        let snd_path = sound.as_deref();
         println!("🎯 WorkerW HWND: {:?}", workerw);
-        println!("🔊 Click Sound Profile: {}", snd_path);
-        println!("⚡ Bridge active. Click on your desktop to test tactile audio & fluid ripples!");
-        engine::bridge::DesktopInputBridge::run(workerw, Some(snd_path))?;
+        if let Some(snd) = snd_path {
+            println!("🔊 Click Sound Profile: {}", snd);
+        } else {
+            println!("🔇 Click Sound Profile: Muted (Silent Mode)");
+        }
+
+        // Spawn loopback telemetry server on 127.0.0.1:48123 for live CPU, MEM, DISK stats
+        if let Err(e) = engine::telemetry::TelemetryServer::spawn_loopback_service(48123) {
+            eprintln!("⚠️ Telemetry server notice: {}", e);
+        } else {
+            println!("📊 Telemetry service active: http://127.0.0.1:48123/stats");
+        }
+
+        println!("⚡ Bridge active. Click on your desktop to trigger visual effects!");
+        engine::bridge::DesktopInputBridge::run(workerw, snd_path)?;
         return Ok(());
     }
 

@@ -48,10 +48,31 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
         }
     }
 
-    // Copy live video files if available
+    // Copy live video files and 4K images if available
     let collection_dir = Path::new("C:\\Users\\agung\\Pictures\\Wallpapers\\Fantasy_RPG_Collection");
     if collection_dir.exists() {
-        for file in &["01_citadel_twilight_live.mp4", "02_mystical_forest_shrine_live.mp4", "03_mountain_aurora_snow_live.mp4"] {
+        for file in &[
+            "01_citadel_twilight_live.mp4",
+            "02_mystical_forest_shrine_live.mp4",
+            "03_mountain_aurora_snow_live.mp4",
+            "04_celestial_dunes_oasis_live.mp4",
+            "05_floating_sky_citadel_live.mp4",
+            "06_volcanic_obsidian_forge_live.mp4",
+            "07_sunken_coral_atlantis_live.mp4",
+            "08_cyber_aegis_megacity_live.mp4",
+            "09_autumn_dragon_valley_live.mp4",
+            "10_celestial_starfall_spire_live.mp4",
+            "01_citadel_twilight_4k.jpg",
+            "02_mystical_forest_shrine_4k.jpg",
+            "03_mountain_aurora_fortress_4k.jpg",
+            "04_celestial_dunes_oasis_4k.jpg",
+            "05_floating_sky_citadel_4k.jpg",
+            "06_volcanic_obsidian_forge_4k.jpg",
+            "07_sunken_coral_atlantis_4k.jpg",
+            "08_cyber_aegis_megacity_4k.jpg",
+            "09_autumn_dragon_valley_4k.jpg",
+            "10_celestial_starfall_spire_4k.jpg",
+        ] {
             let src = collection_dir.join(file);
             if src.exists() {
                 let _ = fs::copy(&src, out.join(file));
@@ -91,9 +112,21 @@ pub fn scaffold_interactive_wallpaper(opts: &ScaffolderOptions) -> Result<PathBu
             "items": [
                 "01 - Citadel Twilight Live (Flowing River & Sun Rays)",
                 "02 - Mystical Forest Shrine Live (Pulsing Runes & Mist)",
-                "03 - Mountain Aurora Fortress Live (Northern Lights & Snow)"
+                "03 - Mountain Aurora Fortress Live (Northern Lights & Snow)",
+                "04 - Celestial Dunes Oasis (Desert Waters & Twin Moons)",
+                "05 - Floating Sky Citadel of Aetheria (Cloud Falls & Godrays)",
+                "06 - Volcanic Obsidian Forge (Molten Magma & Rising Embers)",
+                "07 - Sunken Coral Atlantis (Abyssal Caustics & Drifting Plankton)",
+                "08 - Cyber-Aegis Neo-Tokyo Bastion (Holo Shield & Wet Reflections)",
+                "09 - Autumn Dragon Valley (Cascading Falls & Swirling Maple)",
+                "10 - Celestial Starfall Observatory (Nebula Breath & Streaking Meteors)"
             ],
             "text": "Live 4K Animated Scene"
+        },
+        "ultraLightMode": {
+            "type": "checkbox",
+            "value": true,
+            "text": "Ultra-Lightweight / Eco Mode (0% CPU, Auto-Pause on Fullscreen)"
         },
         "soundPack": {
             "type": "dropdown",

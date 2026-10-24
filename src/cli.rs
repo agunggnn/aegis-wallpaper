@@ -25,6 +25,22 @@ pub struct Cli {
     #[arg(short = 's', long)]
     pub switch: Option<String>,
 
+    /// Switch live RPG realm (1 to 10)
+    #[arg(long)]
+    pub realm: Option<u32>,
+
+    /// Skip to next live RPG realm
+    #[arg(long)]
+    pub next: bool,
+
+    /// Open live interactive 4K wallpaper preview in browser (supports all keyboard hotkeys & F11 fullscreen)
+    #[arg(long)]
+    pub preview: bool,
+
+    /// Restart Lively Wallpaper engine on active desktop
+    #[arg(long)]
+    pub restart: bool,
+
     /// Deploy a new interactive HTML5 live wallpaper suite
     #[arg(long)]
     pub deploy_interactive: bool,
