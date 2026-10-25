@@ -22,7 +22,7 @@ let currentSceneIdx = 10;
 let autoRotateEnabled = true;
 let rotateIntervalMinutes = 30;
 let lastRotationTime = Date.now();
-let ultraLightMode = true; // Eco / Ultra-Lightweight by default
+let ultraLightMode = false; // Default: balanced liveliness with reactive fireflies
 let renderEngineMode = 1;  // 0: Pure 4K Canvas FX, 1: Hardware Live Video MP4 (Default)
 
 function resizeCanvas() {
@@ -307,10 +307,9 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// Initialize clean default: in Video MP4 mode + ultraLightMode, keep ambient canvas fireflies at 0
-// so the master deterministic MP4 video is 100% unobstructed.
-if (window.fireflyEngine && renderEngineMode === 1 && ultraLightMode) {
-    window.fireflyEngine.setCount(0);
+// Initialize balanced liveliness: provide tasteful ambient fireflies (20 motes) that react to mouse hover/clicks
+if (window.fireflyEngine && renderEngineMode === 1) {
+    window.fireflyEngine.setCount(ultraLightMode ? 0 : 20);
 }
 
 const initialScene = 10;

@@ -1,0 +1,331 @@
+{
+  "$schema": "./schema/realm_manifest_schema.json",
+  "version": "2.0.0",
+  "engine": "Aegis Deterministic Motion Engine",
+  "updated_at": "2026-10-25T11:00:00Z",
+  "global_profile": {
+    "resolution": [2560, 1440],
+    "fps": 30,
+    "duration_seconds": 8.0,
+    "total_frames": 240,
+    "encoder": {
+      "codec": "h264_nvenc",
+      "preset": "p5",
+      "cq": 15,
+      "b_frames": 0,
+      "gop_size": 30,
+      "pix_fmt": "yuv420p"
+    },
+    "mathematical_invariants": {
+      "blend_window": "hann_sine_squared_dual_phase",
+      "window_formula": "w = sin^2(t1 * pi)",
+      "harmonics": "strict_integers_only",
+      "particle_envelope": "sin^1.5(progress * pi)",
+      "max_seam_delta": 1.5
+    }
+  },
+  "realms": [
+    {
+      "index": 1,
+      "id": "citadel",
+      "name": "Valerius Citadel Twilight",
+      "source_image": "01_citadel_twilight_4k.jpg",
+      "output_video": "01_citadel_twilight_live.mp4",
+      "liveliness_profile": "balanced_active",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "winding_river",
+        "num_cycles": 6,
+        "cycle_displacement_px": 13.0,
+        "velocity_px_per_sec": 9.75,
+        "gleam_frequency": 36.0,
+        "gleam_amplitude": 14.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "golden_twilight_motes",
+        "count": 55,
+        "rise_speed_range": [55.0, 110.0],
+        "sway_amplitude_range": [12.0, 24.0],
+        "radius_range": [1.4, 2.6],
+        "colors": [[110, 215, 255]]
+      },
+      "luminescence": {
+        "godrays": { "frequency_harmonic": 1, "amp_bgr": [2.0, 9.0, 13.5] },
+        "citadel_windows": { "frequency_harmonic": 2, "amp_bgr": [2.0, 12.5, 21.0] }
+      }
+    },
+    {
+      "index": 2,
+      "id": "shrine",
+      "name": "Eldertree Mystical Shrine",
+      "source_image": "02_mystical_forest_shrine_4k.jpg",
+      "output_video": "02_mystical_forest_shrine_live.mp4",
+      "liveliness_profile": "mystical_enchanted",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "forest_wisps_and_spores",
+        "count": 64,
+        "rise_speed_range": [60.0, 125.0],
+        "sway_amplitude_range": [14.0, 28.0],
+        "radius_range": [1.5, 2.8],
+        "colors": [[235, 255, 130], [130, 235, 255]]
+      },
+      "luminescence": {
+        "altar_glow": { "frequency_harmonic": 1, "amp_bgr": [19.0, 15.0, 3.0] },
+        "arcane_runes": { "frequency_harmonic": 2, "amp_bgr": [28.0, 24.0, 5.0] }
+      }
+    },
+    {
+      "index": 3,
+      "id": "aurora",
+      "name": "Frostpeak Aurora Fortress",
+      "source_image": "03_mountain_aurora_fortress_4k.jpg",
+      "output_video": "03_mountain_aurora_snow_live.mp4",
+      "liveliness_profile": "crisp_atmospheric",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "layered_calm_snowfall",
+        "count": 280,
+        "fall_speed_range": [140.0, 260.0],
+        "drift_speed_range": [20.0, 48.0],
+        "sway_amplitude_range": [10.0, 20.0],
+        "radius_distribution": [1.2, 1.8, 2.4],
+        "colors": [[255, 248, 240]]
+      },
+      "luminescence": {
+        "aurora_borealis": { "wave_1_freq": 1, "wave_2_freq": 2, "amp_rgb": [1.55, 1.30, 0.70] },
+        "fortress_torches": { "frequency_harmonic": 2, "amp_bgr": [1.5, 11.0, 19.0] }
+      }
+    },
+    {
+      "index": 4,
+      "id": "dunes",
+      "name": "Celestial Dunes Oasis",
+      "source_image": "04_celestial_dunes_oasis_4k.jpg",
+      "output_video": "04_celestial_dunes_oasis_live.mp4",
+      "liveliness_profile": "serene_shimmer",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "desert_oasis_pool",
+        "num_cycles": 6,
+        "cycle_displacement_px": 9.0,
+        "velocity_px_per_sec": 6.75,
+        "caustics_amplitude": 14.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "desert_stardust_motes",
+        "count": 58,
+        "rise_speed_range": [45.0, 95.0],
+        "sway_amplitude_range": [10.0, 22.0],
+        "radius_range": [1.3, 2.3],
+        "colors": [[110, 215, 255], [255, 230, 120]]
+      },
+      "luminescence": {
+        "obelisk_glyphs": { "frequency_harmonic": 2, "amp_bgr": [2.0, 15.0, 24.0] },
+        "twin_moon_sky": { "frequency_harmonic": 1, "amp_bgr": [9.0, 4.0, 7.0] }
+      }
+    },
+    {
+      "index": 5,
+      "id": "sky_citadel",
+      "name": "Floating Sky Citadel of Aetheria",
+      "source_image": "05_floating_sky_citadel_4k.jpg",
+      "output_video": "05_floating_sky_citadel_live.mp4",
+      "liveliness_profile": "rushing_cataracts",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "cascading_cloud_falls",
+        "num_cycles": 7,
+        "cycle_displacement_px": 22.0,
+        "velocity_px_per_sec": 19.25,
+        "gleam_amplitude": 16.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "waterfall_spray_and_mist_motes",
+        "count": 48,
+        "drift_speed_range": [25.0, 50.0],
+        "rise_speed_range": [10.0, 25.0],
+        "sway_amplitude_range": [8.0, 18.0],
+        "radius_range": [1.4, 2.5],
+        "colors": [[255, 240, 210], [210, 245, 255]]
+      },
+      "luminescence": {
+        "cataract_rainbow": { "frequency_harmonic": 1, "amp_bgr": [10.0, 11.0, 7.5] },
+        "celestial_godrays": { "frequency_harmonic": 1, "amp_bgr": [1.5, 6.5, 9.0] }
+      }
+    },
+    {
+      "index": 6,
+      "id": "forge",
+      "name": "Volcanic Obsidian Forge",
+      "source_image": "06_volcanic_obsidian_forge_4k.jpg",
+      "output_video": "06_volcanic_obsidian_forge_live.mp4",
+      "liveliness_profile": "energetic_volcanic",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "molten_magma_cataracts",
+        "num_cycles": 6,
+        "cycle_displacement_px": 18.0,
+        "velocity_px_per_sec": 13.5,
+        "pool_undulation_amp_px": 1.4
+      },
+      "particles": {
+        "enabled": true,
+        "type": "volcanic_fire_embers",
+        "count": 85,
+        "rise_speed_range": [110.0, 220.0],
+        "sway_amplitude_range": [12.0, 26.0],
+        "radius_distribution": [1.4, 2.0, 2.6],
+        "colors": [[40, 175, 255]]
+      },
+      "luminescence": {
+        "magma_churn": { "frequency_harmonic": 1, "amp_bgr": [0.5, 12.0, 18.0] },
+        "furnace_runes": { "frequency_harmonic": 2, "amp_bgr": [0.5, 14.0, 22.0] }
+      }
+    },
+    {
+      "index": 7,
+      "id": "atlantis",
+      "name": "Sunken Coral Atlantis",
+      "source_image": "07_sunken_coral_atlantis_4k.jpg",
+      "output_video": "07_sunken_coral_atlantis_live.mp4",
+      "liveliness_profile": "buoyant_abyssal",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "abyssal_current_advection",
+        "num_cycles": 4,
+        "cycle_displacement_px": 8.0,
+        "velocity_px_per_sec": 4.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "rising_deepsea_bubbles",
+        "count": 85,
+        "rise_speed_range": [85.0, 180.0],
+        "sway_amplitude_range": [10.0, 24.0],
+        "radius_range": [1.5, 3.4],
+        "colors": [[255, 240, 170]]
+      },
+      "luminescence": {
+        "sunlight_water_shafts": { "frequency_harmonic": 1, "amp_bgr": [14.0, 12.5, 2.0] },
+        "bioluminescent_coral": { "frequency_harmonic": 2, "amp_bgr": [22.0, 18.0, 5.0] }
+      }
+    },
+    {
+      "index": 8,
+      "id": "cyber",
+      "name": "Cyber-Aegis Neo-Tokyo Bastion",
+      "source_image": "08_cyber_aegis_megacity_4k.jpg",
+      "output_video": "08_cyber_aegis_megacity_live.mp4",
+      "liveliness_profile": "dynamic_cyberpunk",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "neon_rain_streaks",
+        "count": 135,
+        "fall_speed_range": [180.0, 320.0],
+        "streak_length_range": [18.0, 36.0],
+        "colors": [[255, 225, 120], [235, 110, 255]]
+      },
+      "luminescence": {
+        "wet_road_reflections": { "frequency_harmonic": 1, "amp_bgr": [18.0, 13.0, 10.0] },
+        "holo_dome_shield": { "frequency_harmonic": 2, "amp_bgr": [22.0, 5.0, 15.0] },
+        "neon_signage": { "frequency_harmonic": 3, "amp_bgr": [18.0, 4.0, 18.0] }
+      }
+    },
+    {
+      "index": 9,
+      "id": "valley",
+      "name": "Autumn Dragon Valley",
+      "source_image": "09_autumn_dragon_valley_4k.jpg",
+      "output_video": "09_autumn_dragon_valley_live.mp4",
+      "liveliness_profile": "fluttering_foliage_and_cascades",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "valley_waterfall_cascades",
+        "num_cycles": 7,
+        "cycle_displacement_px": 22.0,
+        "velocity_px_per_sec": 19.25,
+        "sparkle_amplitude": 16.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "swirling_autumn_maple_leaves",
+        "count": 36,
+        "fall_distance_range": [50.0, 95.0],
+        "sway_amplitude_range": [18.0, 32.0],
+        "rotation_amplitude_range": [20.0, 45.0],
+        "colors": [[25, 40, 215], [20, 130, 245], [30, 85, 220], [15, 110, 235]]
+      },
+      "luminescence": {
+        "plunge_pool_mist": { "frequency_harmonic": 1, "amp_bgr": [10.0, 10.0, 10.0] },
+        "cliff_lanterns": { "frequency_harmonic": 2, "amp_bgr": [4.0, 12.0, 18.0] }
+      }
+    },
+    {
+      "index": 10,
+      "id": "starfall",
+      "name": "Celestial Starfall Observatory",
+      "source_image": "10_celestial_starfall_spire_4k.jpg",
+      "output_video": "10_celestial_starfall_spire_live.mp4",
+      "liveliness_profile": "cosmic_bolides",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "spiral_galaxy_swirl",
+        "swirl_weight_peak": 0.032
+      },
+      "particles": {
+        "enabled": true,
+        "type": "streaking_meteors_and_spire_stardust",
+        "bolide_count": 10,
+        "stardust_motes_count": 45,
+        "bolide_trail_range": [95.0, 140.0],
+        "colors": [[255, 248, 230], [255, 235, 255]]
+      },
+      "luminescence": {
+        "galaxy_nebula": { "frequency_harmonic": 1, "amp_bgr": [18.0, 5.0, 13.0] },
+        "observatory_windows": { "frequency_harmonic": 2, "amp_bgr": [2.0, 12.5, 19.5] }
+      }
+    },
+    {
+      "index": 11,
+      "id": "dreamscript",
+      "name": "Ethereal Dreamscript Nexus",
+      "source_image": "11_ethereal_dreamscript_4k.jpg",
+      "output_video": "11_ethereal_dreamscript_live.mp4",
+      "liveliness_profile": "celestial_nexus",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "abyssal_cloud_sea_drift",
+        "num_cycles": 6,
+        "cycle_displacement_px": 16.0,
+        "velocity_px_per_sec": 12.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "celestial_astral_stardust",
+        "count": 70,
+        "rise_speed_range": [60.0, 130.0],
+        "sway_amplitude_range": [12.0, 25.0],
+        "radius_range": [1.3, 2.5],
+        "colors": [[255, 225, 130], [250, 175, 225]]
+      },
+      "luminescence": {
+        "cyan_crystal_spires": { "frequency_harmonic": 1, "amp_bgr": [19.0, 16.0, 3.0] },
+        "violet_astral_ribbon": { "frequency_harmonic": 1, "amp_bgr": [15.0, 3.0, 17.0] },
+        "golden_zodiac_ring": { "frequency_harmonic": 2, "amp_bgr": [3.0, 13.0, 19.0] }
+      }
+    }
+  ]
+}

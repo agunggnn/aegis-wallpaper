@@ -174,7 +174,25 @@ sequenceDiagram
 
 ---
 
-## 🛠️ 5. Next Steps for Collaborative Implementation with Claude
-1. **Repository Setup**: Push `agunggnn/aegis-wallpaper` to GitHub containing the full codebase, shaders, scripts, and documentation.
-2. **Standardized Manifest API**: Claude can design the UI/UX components (Timeline, Layer Inspector, Fluid Corridor Sliders) targeting the `dreamscript-scene.json` schema.
-3. **Engine Packaging**: Port the Python NumPy/OpenCV algorithms into a unified CLI tool: `aegis-engine render [manifest.json]`.
+## 🛠️ 5. Unified CLI, Anti-Duplication Standard & Manifest Specification
+
+To eliminate redundant or duplicate rendering scripts (`render_four_master_realms.py`, `render_calm_autumn_valley.py`), the motion pipeline is unified into a single command-line interface and declarative manifest:
+
+- **Unified CLI Engine**: [`scripts/render_all_master_realms.py`](file:///E:/GitHub/aegis-wallpaper/scripts/render_all_master_realms.py)
+  - `python scripts/render_all_master_realms.py --list`: Inspect all 11 realms, their output files, and parameter profiles.
+  - `python scripts/render_all_master_realms.py --realm <id>`: Render an individual realm with its exact lively motion profile and automatically sync to all deployment destinations.
+  - `python scripts/render_all_master_realms.py --all`: Render and sync the entire 11-realm suite.
+- **Declarative Configuration Manifest**: [`assets/realms_manifest.json`](file:///E:/GitHub/aegis-wallpaper/assets/realms_manifest.json)
+  - Formally documents every realm's cycle count, displacement, fluid velocity, particle count, and harmonic luminescence.
+- **Complete Architecture Blueprint & Operational Guide**: [`docs/WALLPAPER_GENERATION_GUIDE.md`](file:///E:/GitHub/aegis-wallpaper/docs/WALLPAPER_GENERATION_GUIDE.md)
+  - Contains the Universal Architecture Blueprint (Visual Schematic, Tech Matrix, HLD, LLD Sequence, ERD, and Parameter Reference Table).
+- **Visual Architecture Schematic**: [`docs/assets/aegis_architecture_blueprint.jpg`](file:///E:/GitHub/aegis-wallpaper/docs/assets/aegis_architecture_blueprint.jpg)
+
+![Aegis Architecture Blueprint](file:///E:/GitHub/aegis-wallpaper/docs/assets/aegis_architecture_blueprint.jpg)
+
+---
+
+## 🚀 6. Next Steps for Collaborative Implementation with Claude & Dreamscript Studio
+1. **Standardized Manifest API**: Claude UI/UX components in Dreamscript Studio target the schema defined in `assets/realms_manifest.json`.
+2. **Headless Execution**: Dispatch tasks directly to `scripts/render_all_master_realms.py` via `media-fabric` outbound pull workers.
+3. **Interactive Sync**: Live Web Suite in `assets/interactive` auto-syncs with Lively Wallpaper on every render.

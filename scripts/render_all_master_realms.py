@@ -2,33 +2,56 @@
 """
 Aegis Sovereign Deterministic Motion Engine - Master Suite Renderer (All 11 Realms)
 ===================================================================================
-Fixes all motion, loop-seam, and mask-bleed artifacts across Realms 01 - 11:
+Unified Master Pipeline & Single Source of Truth for Aegis Live Wallpapers.
+
+Mathematical Invariants & Architectural Rules:
 1. Exact Dual-Phase Windowing:
    `frame = f1 * w_blend + f2 * (1.0 - w_blend)` where `w_blend = sin^2(t1 * pi)`.
    Guarantees 0% weight on `f1` at `t1 = 0` (reset) and 0% weight on `f2` at `t1 = 0.5` (reset).
 2. Strict Integer Harmonics:
    All `sin(k * phase)` terms use integer `k in {1, 2, 3}` (eliminating half-integer `1.5`/`2.5` loop snaps).
 3. Zero-Teleport Particle Envelopes:
-   Every particle (snow, embers, leaves, meteors, bubbles, traffic, stardust) uses a periodic
+   Every particle (snow, embers, leaves, meteors, bubbles, stardust) uses a periodic
    `sin^1.5(prog * pi)` alpha lifecycle so particles never jump at the loop boundary.
 4. Surgical Feature Gating:
    100% rock-solid architecture, bridges, ships, cliffs, trees, and statues (zero rubber mesh warping).
 5. Hardware NVENC Zero-B-Frame Loop Encoding:
    `2560x1440 @ 30fps`, `h264_nvenc -preset p5 -cq 15 -bf 0 -g 30` for stutter-free WebView2 `<video loop>`.
+
+CLI Usage:
+  python render_all_master_realms.py --all             # Render all 11 realms
+  python render_all_master_realms.py --realm 5        # Render only Realm 05 (Sky Citadel)
+  python render_all_master_realms.py --realm 1,3,9    # Render a subset of realms
+  python render_all_master_realms.py --list           # List all realms & parameter profiles
+  python render_all_master_realms.py --no-sync        # Skip syncing to external folders
 """
 
 import os
 import sys
 import time
 import shutil
+import argparse
 import subprocess
 import cv2
 import numpy as np
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 REPO_INTERACTIVE = r"E:\GitHub\aegis-wallpaper\assets\interactive"
 COLLECTION_DIR = r"C:\Users\agung\Pictures\Wallpapers\Fantasy_RPG_Collection"
 SRC_DIR = COLLECTION_DIR if os.path.exists(COLLECTION_DIR) else REPO_INTERACTIVE
 OUT_DIR = COLLECTION_DIR if os.path.exists(COLLECTION_DIR) else REPO_INTERACTIVE
+
+DESTINATIONS = [
+    r"E:\GitHub\aegis-wallpaper\assets\interactive",
+    r"C:\Users\agung\Pictures\Wallpapers\Interactive_Fantasy_Suite",
+    r"C:\Users\agung\AppData\Local\Lively Wallpaper\Library\wallpapers\aegis_interactive",
+    r"C:\Users\agung\AppData\Local\Lively Wallpaper\Library\SaveData\wptmp\lrosxyrt.a4j",
+]
 
 W, H = 2560, 1440
 FPS = 30
@@ -85,26 +108,32 @@ def make_glow_bgr(mask, b_scale, g_scale, r_scale):
 
 
 def draw_soft_particles(frame_u8, xs, ys, radii, bgr_color, alphas):
-    """Fast anti-aliased particle renderer using additive glow + core blending."""
-    layer = np.zeros_like(frame_u8)
+    """Ultra-fast local-patch particle renderer using additive glow + core blending."""
     for x, y, r, a in zip(xs, ys, radii, alphas):
         if a <= 0.02:
             continue
         ix, iy = int(round(x)), int(round(y))
-        if not (0 <= ix < W and 0 <= iy < H):
+        ir = max(1, int(round(r)))
+        rad_pad = ir + 2
+        if not (rad_pad <= ix < W - rad_pad and rad_pad <= iy < H - rad_pad):
             continue
         fa = float(a)
         outer_col = (int(bgr_color[0] * fa * 0.55), int(bgr_color[1] * fa * 0.55), int(bgr_color[2] * fa * 0.55))
         core_col = (int(min(255, bgr_color[0] * 1.15) * fa), int(min(255, bgr_color[1] * 1.15) * fa), int(min(255, bgr_color[2] * 1.15) * fa))
-        cv2.circle(layer, (ix, iy), int(round(r)) + 1, outer_col, -1, lineType=cv2.LINE_AA)
-        cv2.circle(layer, (ix, iy), max(1, int(round(r * 0.6))), core_col, -1, lineType=cv2.LINE_AA)
-    cv2.add(frame_u8, layer, dst=frame_u8)
+
+        x1, y1 = ix - rad_pad, iy - rad_pad
+        x2, y2 = ix + rad_pad + 1, iy + rad_pad + 1
+        roi = frame_u8[y1:y2, x1:x2]
+        patch = np.zeros_like(roi)
+        cv2.circle(patch, (rad_pad, rad_pad), ir + 1, outer_col, -1, lineType=cv2.LINE_AA)
+        cv2.circle(patch, (rad_pad, rad_pad), max(1, int(round(r * 0.6))), core_col, -1, lineType=cv2.LINE_AA)
+        cv2.add(roi, patch, dst=roi)
 
 
 # ==============================================================================
 # REALM 01: Valerius Citadel Twilight (Winding River + Sunset Godrays + Motes)
 # ==============================================================================
-def render_01_citadel():
+def render_01_citadel(cq=15):
     print("\n[01/11] Rendering Realm 01: Valerius Citadel Twilight...", flush=True)
     t0 = time.time()
     img = load_master("01_citadel_twilight_4k.jpg")
@@ -136,18 +165,18 @@ def render_01_citadel():
     ny_crop = NY[ry0:, rx0:rx1]
 
     np.random.seed(101)
-    n_motes = 38
+    n_motes = 55
     mx0 = np.random.uniform(0.10, 0.90, n_motes) * W
     my0 = np.random.uniform(0.45, 0.92, n_motes) * H
     m_rise = np.random.uniform(55.0, 110.0, n_motes)
     m_sway = np.random.uniform(12.0, 24.0, n_motes)
     m_off = np.random.uniform(0.0, 1.0, n_motes)
-    m_rad = np.random.uniform(1.4, 2.4, n_motes)
-    m_alpha = np.random.uniform(0.45, 0.80, n_motes)
+    m_rad = np.random.uniform(1.4, 2.6, n_motes)
+    m_alpha = np.random.uniform(0.45, 0.85, n_motes)
 
-    proc = open_nvenc(out_path)
-    num_cycles = 4
-    cycle_d = 9.0
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 6
+    cycle_d = 13.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -165,7 +194,7 @@ def render_01_citadel():
         f1 = cv2.remap(r_crop, xg_crop - dy1 * 0.35, yg_crop - dy1, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         f2 = cv2.remap(r_crop, xg_crop - dy2 * 0.35, yg_crop - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         river_frame = f1 * w_blend + f2 * (1.0 - w_blend)
-        gleam = ((np.sin(ny_crop * 36.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * rm_crop * 11.0
+        gleam = ((np.sin(ny_crop * 36.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * rm_crop * 14.0
         river_frame += gleam[:, :, np.newaxis]
         frame[ry0:, rx0:rx1] = river_frame
 
@@ -176,12 +205,13 @@ def render_01_citadel():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 01", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
 # REALM 02: Eldertree Mystical Shrine (Arcane Runes + Canopy Rays + Forest Wisps)
 # ==============================================================================
-def render_02_shrine():
+def render_02_shrine(cq=15):
     print("\n[02/11] Rendering Realm 02: Eldertree Mystical Shrine...", flush=True)
     t0 = time.time()
     img = load_master("02_mystical_forest_shrine_4k.jpg")
@@ -195,20 +225,20 @@ def render_02_shrine():
     in_sunbeams = (NX >= 0.48) & (NX <= 0.88) & (NY <= 0.58) & (r > 110) & (g > 110) & (r > b * 1.05)
     beam_mask = cv2.GaussianBlur(in_sunbeams.astype(np.float32), (31, 31), 0)
 
-    glow_rune = make_glow_bgr(rune_mask, 25.0, 21.0, 4.0)
-    glow_altar = make_glow_bgr(altar_mask, 19.0, 15.0, 3.0) + make_glow_bgr(beam_mask, 2.0, 10.0, 12.0)
+    glow_rune = make_glow_bgr(rune_mask, 28.0, 24.0, 5.0)
+    glow_altar = make_glow_bgr(altar_mask, 21.0, 16.0, 3.5) + make_glow_bgr(beam_mask, 2.5, 11.0, 13.5)
 
     np.random.seed(202)
-    n_wisps = 44
-    wx0 = np.random.uniform(0.15, 0.85, n_wisps) * W
-    wy0 = np.random.uniform(0.35, 0.90, n_wisps) * H
-    w_rise = np.random.uniform(60.0, 125.0, n_wisps)
-    w_sway = np.random.uniform(14.0, 28.0, n_wisps)
+    n_wisps = 64
+    wx0 = np.random.uniform(0.12, 0.88, n_wisps) * W
+    wy0 = np.random.uniform(0.30, 0.92, n_wisps) * H
+    w_rise = np.random.uniform(60.0, 130.0, n_wisps)
+    w_sway = np.random.uniform(14.0, 30.0, n_wisps)
     w_off = np.random.uniform(0.0, 1.0, n_wisps)
     w_rad = np.random.uniform(1.5, 2.8, n_wisps)
-    w_alpha = np.random.uniform(0.45, 0.85, n_wisps)
+    w_alpha = np.random.uniform(0.48, 0.88, n_wisps)
 
-    proc = open_nvenc(out_path)
+    proc = open_nvenc(out_path, cq=cq)
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
@@ -220,17 +250,18 @@ def render_02_shrine():
         p_a = (np.sin(p_prog * np.pi) ** 1.5) * w_alpha
         px = wx0 + np.sin(p_prog * 2.0 * np.pi) * w_sway
         py = wy0 - p_prog * w_rise
-        draw_soft_particles(frame_u8, px[:24], py[:24], w_rad[:24], (235, 255, 130), p_a[:24])
-        draw_soft_particles(frame_u8, px[24:], py[24:], w_rad[24:], (130, 235, 255), p_a[24:])
+        draw_soft_particles(frame_u8, px[:34], py[:34], w_rad[:34], (235, 255, 130), p_a[:34])
+        draw_soft_particles(frame_u8, px[34:], py[34:], w_rad[34:], (130, 235, 255), p_a[34:])
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 02", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 03: Mountain Aurora Fortress (Northern Lights + Zero-Seam Calm Snowfall)
+# REALM 03: Mountain Aurora Fortress (Northern Lights + Zero-Seam Snowfall)
 # ==============================================================================
-def render_03_aurora():
+def render_03_aurora(cq=15):
     print("\n[03/11] Rendering Realm 03: Frostpeak Aurora Fortress...", flush=True)
     t0 = time.time()
     img = load_master("03_mountain_aurora_fortress_4k.jpg")
@@ -251,7 +282,7 @@ def render_03_aurora():
     torch_glow = make_glow_bgr(torch_mask, 1.5, 11.0, 19.0)
 
     np.random.seed(303)
-    n_snow = 220
+    n_snow = 280
     sx0 = np.random.uniform(0.0, W, n_snow)
     sy0 = np.random.uniform(0.0, H, n_snow)
     s_fall = np.random.uniform(140.0, 260.0, n_snow)
@@ -259,19 +290,19 @@ def render_03_aurora():
     s_sway = np.random.uniform(10.0, 20.0, n_snow)
     s_off = np.random.uniform(0.0, 1.0, n_snow)
     s_rad = np.random.choice([1.2, 1.8, 2.4], size=n_snow, p=[0.55, 0.35, 0.10])
-    s_alpha = np.random.uniform(0.38, 0.80, n_snow)
+    s_alpha = np.random.uniform(0.40, 0.85, n_snow)
 
-    proc = open_nvenc(out_path)
+    proc = open_nvenc(out_path, cq=cq)
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
         tp = float(np.sin(phase * 2.0) * 0.5 + 0.5)
         frame = img_f + tp * torch_glow
 
-        w1 = (np.sin(aur_spatial_1 + phase) * 0.5 + 0.5) * aurora_mask * 15.0
-        w2 = (np.sin(aur_spatial_2 - phase * 2.0) * 0.5 + 0.5) * aurora_mask * 10.0
-        frame[:sky_h, :, 0] += w2 * 1.15
-        frame[:sky_h, :, 1] += w1 * 1.35
+        w1 = (np.sin(aur_spatial_1 + phase) * 0.5 + 0.5) * aurora_mask * 17.5
+        w2 = (np.sin(aur_spatial_2 - phase * 2.0) * 0.5 + 0.5) * aurora_mask * 12.0
+        frame[:sky_h, :, 0] += w2 * 1.30
+        frame[:sky_h, :, 1] += w1 * 1.55
         frame[:sky_h, :, 2] += w2 * 0.70
 
         frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
@@ -283,12 +314,13 @@ def render_03_aurora():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 03", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
 # REALM 04: Celestial Dunes Oasis (2560x1440 Oasis Pool + Obelisk Glyphs + Stars)
 # ==============================================================================
-def render_04_dunes():
+def render_04_dunes(cq=15):
     print("\n[04/11] Rendering Realm 04: Celestial Dunes Oasis...", flush=True)
     t0 = time.time()
     img = load_master("04_celestial_dunes_oasis_4k.jpg")
@@ -318,18 +350,18 @@ def render_04_dunes():
     ny_crop = NY[py0:py1, px0:px1]
 
     np.random.seed(404)
-    n_motes = 42
-    mx0 = np.random.uniform(0.15, 0.85, n_motes) * W
-    my0 = np.random.uniform(0.35, 0.88, n_motes) * H
+    n_motes = 58
+    mx0 = np.random.uniform(0.12, 0.88, n_motes) * W
+    my0 = np.random.uniform(0.32, 0.88, n_motes) * H
     m_rise = np.random.uniform(45.0, 95.0, n_motes)
     m_sway = np.random.uniform(10.0, 22.0, n_motes)
     m_off = np.random.uniform(0.0, 1.0, n_motes)
-    m_rad = np.random.uniform(1.3, 2.3, n_motes)
-    m_alpha = np.random.uniform(0.45, 0.82, n_motes)
+    m_rad = np.random.uniform(1.3, 2.4, n_motes)
+    m_alpha = np.random.uniform(0.48, 0.86, n_motes)
 
-    proc = open_nvenc(out_path)
-    num_cycles = 4
-    cycle_w = 6.0
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 6
+    cycle_w = 9.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -347,9 +379,9 @@ def render_04_dunes():
         f1 = cv2.remap(p_crop, xg_crop - dx1, yg_crop, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         f2 = cv2.remap(p_crop, xg_crop - dx2, yg_crop, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         pool_frame = f1 * w_blend + f2 * (1.0 - w_blend)
-        caust = (np.sin(nx_crop * 28.0 + ny_crop * 18.0 - phase * 2.0) * 0.5 + 0.5) * pm_crop * 10.0
-        pool_frame[:, :, 0] += caust * 1.15
-        pool_frame[:, :, 1] += caust * 1.05
+        caust = (np.sin(nx_crop * 28.0 + ny_crop * 18.0 - phase * 2.0) * 0.5 + 0.5) * pm_crop * 14.0
+        pool_frame[:, :, 0] += caust * 1.20
+        pool_frame[:, :, 1] += caust * 1.10
         frame[py0:py1, px0:px1] = pool_frame
 
         frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
@@ -357,18 +389,19 @@ def render_04_dunes():
         p_a = (np.sin(p_prog * np.pi) ** 1.5) * m_alpha
         px = mx0 + np.sin(p_prog * 2.0 * np.pi) * m_sway
         py = my0 - p_prog * m_rise
-        draw_soft_particles(frame_u8, px[:22], py[:22], m_rad[:22], (110, 215, 255), p_a[:22])
-        draw_soft_particles(frame_u8, px[22:], py[22:], m_rad[22:], (255, 230, 120), p_a[22:])
+        draw_soft_particles(frame_u8, px[:30], py[:30], m_rad[:30], (110, 215, 255), p_a[:30])
+        draw_soft_particles(frame_u8, px[30:], py[30:], m_rad[30:], (255, 230, 120), p_a[30:])
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 04", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 05: Floating Sky Citadel of Aetheria (Pure Waterfalls, Zero Ship Warp!)
+# REALM 05: Floating Sky Citadel of Aetheria (Pure Waterfalls + Drifting Mist)
 # ==============================================================================
-def render_05_sky_citadel():
-    print("\n[05/11] Rendering Realm 05: Floating Sky Citadel (Zero Ship Warp, Pure Falls)...", flush=True)
+def render_05_sky_citadel(cq=15):
+    print("\n[05/11] Rendering Realm 05: Floating Sky Citadel (Lively Falls + Mist)...", flush=True)
     t0 = time.time()
     img = load_master("05_floating_sky_citadel_4k.jpg")
     out_path = os.path.join(OUT_DIR, "05_floating_sky_citadel_live.mp4")
@@ -410,7 +443,6 @@ def render_05_sky_citadel():
     godray_mask = ((np.clip(1.0 - (NX / 0.48), 0.0, 1.0) * np.clip(1.0 - (NY / 0.52), 0.0, 1.0)) ** 1.8).astype(np.float32)
     atmo_glow = make_glow_bgr(rainbow_mask, 10.0, 11.0, 7.5) + make_glow_bgr(godray_mask, 1.5, 6.5, 9.0)
 
-    # Crop waterfall bounding box for fast remap
     wy0, wy1 = 370, 1375
     wx0, wx1 = 725, 2010
     w_crop = img[wy0:wy1, wx0:wx1]
@@ -418,9 +450,20 @@ def render_05_sky_citadel():
     xg_crop, yg_crop = np.meshgrid(np.arange(wx1 - wx0, dtype=np.float32), np.arange(wy1 - wy0, dtype=np.float32))
     ny_crop = NY[wy0:wy1, wx0:wx1]
 
-    proc = open_nvenc(out_path)
-    num_cycles = 5
-    cycle_h = 16.0
+    np.random.seed(505)
+    n_mist = 48
+    mx0 = np.random.uniform(0.28, 0.78, n_mist) * W
+    my0 = np.random.uniform(0.48, 0.92, n_mist) * H
+    m_drift = np.random.uniform(25.0, 50.0, n_mist)
+    m_rise = np.random.uniform(10.0, 25.0, n_mist)
+    m_sway = np.random.uniform(8.0, 18.0, n_mist)
+    m_off = np.random.uniform(0.0, 1.0, n_mist)
+    m_rad = np.random.uniform(1.4, 2.5, n_mist)
+    m_alpha = np.random.uniform(0.40, 0.75, n_mist)
+
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 7
+    cycle_h = 22.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -437,21 +480,28 @@ def render_05_sky_citadel():
         f2 = cv2.remap(w_crop, xg_crop, yg_crop - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         wf_frame = f1 * w_blend + f2 * (1.0 - w_blend)
 
-        gleam = ((np.sin(ny_crop * 32.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * wm_crop * 13.0
+        gleam = ((np.sin(ny_crop * 32.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * wm_crop * 16.0
         wf_frame += gleam[:, :, np.newaxis]
         frame[wy0:wy1, wx0:wx1] = wf_frame
         frame += atmo_p * atmo_glow
 
         frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+        p_prog = (prog + m_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * m_alpha
+        px = mx0 + p_prog * m_drift + np.sin(p_prog * 2.0 * np.pi) * m_sway
+        py = my0 - p_prog * m_rise
+        draw_soft_particles(frame_u8, px[:24], py[:24], m_rad[:24], (255, 240, 210), p_a[:24])
+        draw_soft_particles(frame_u8, px[24:], py[24:], m_rad[24:], (210, 245, 255), p_a[24:])
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 05", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
 # REALM 06: Volcanic Obsidian Forge (Zero-Seam Magma Cataracts + Rising Embers)
 # ==============================================================================
-def render_06_forge():
+def render_06_forge(cq=14):
     print("\n[06/11] Rendering Realm 06: Volcanic Obsidian Forge...", flush=True)
     t0 = time.time()
     img = load_master("06_volcanic_obsidian_forge_4k.jpg")
@@ -480,22 +530,22 @@ def render_06_forge():
     is_runes = (r > 140) & (g > 70) & (b < 60) & (NY >= 0.28) & (NY <= 0.55) & (NX >= 0.38) & (NX <= 0.76)
     runes_mask = cv2.GaussianBlur(is_runes.astype(np.float32), (5, 5), 0)
 
-    magma_glow = make_glow_bgr(lava_mask, 0.5, 10.0, 15.0)
-    rune_glow = make_glow_bgr(runes_mask, 0.5, 11.5, 18.5)
+    magma_glow = make_glow_bgr(lava_mask, 0.5, 12.0, 18.0)
+    rune_glow = make_glow_bgr(runes_mask, 0.5, 14.0, 22.0)
 
     np.random.seed(606)
-    n_embers = 55
+    n_embers = 85
     ex0 = np.random.uniform(0.12, 0.88, n_embers) * W
-    ey0 = np.random.uniform(0.45, 0.96, n_embers) * H
+    ey0 = np.random.uniform(0.42, 0.96, n_embers) * H
     e_rise = np.random.uniform(110.0, 220.0, n_embers)
     e_sway = np.random.uniform(12.0, 26.0, n_embers)
     e_off = np.random.uniform(0.0, 1.0, n_embers)
     e_rad = np.random.choice([1.4, 2.0, 2.6], size=n_embers, p=[0.5, 0.35, 0.15])
-    e_alpha = np.random.uniform(0.55, 0.92, n_embers)
+    e_alpha = np.random.uniform(0.55, 0.95, n_embers)
 
-    proc = open_nvenc(out_path, cq=14)
-    num_cycles = 4
-    cycle_h = 13.0
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 6
+    cycle_h = 18.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -506,7 +556,7 @@ def render_06_forge():
 
         dy1 = (t1 - 0.5) * cycle_h * cataract_mask
         dy2 = (t2 - 0.5) * cycle_h * cataract_mask
-        dx_pool = np.sin(NY * 8.0 + phase) * 1.1 * pool_mask
+        dx_pool = np.sin(NY * 8.0 + phase) * 1.4 * pool_mask
 
         f1 = cv2.remap(img, X_GRID + dx_pool, Y_GRID - dy1, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         f2 = cv2.remap(img, X_GRID + dx_pool, Y_GRID - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
@@ -523,13 +573,14 @@ def render_06_forge():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 06", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 07: Sunken Coral Atlantis (2560x1440 Solid Cathedral + Caustics + Bubbles)
+# REALM 07: Sunken Coral Atlantis (2560x1440 Abyssal Currents + Caustics + Bubbles)
 # ==============================================================================
-def render_07_atlantis():
-    print("\n[07/11] Rendering Realm 07: Sunken Coral Atlantis (100% Solid Spires)...", flush=True)
+def render_07_atlantis(cq=15):
+    print("\n[07/11] Rendering Realm 07: Sunken Coral Atlantis...", flush=True)
     t0 = time.time()
     img = load_master("07_sunken_coral_atlantis_4k.jpg")
     out_path = os.path.join(OUT_DIR, "07_sunken_coral_atlantis_live.mp4")
@@ -542,38 +593,56 @@ def render_07_atlantis():
 
     is_biolum = ((b > 165) & (g > 140) & (b > r * 1.35)) | ((r > 140) & (b > 160) & (NY >= 0.55))
     biolum_mask = cv2.GaussianBlur(is_biolum.astype(np.float32), (9, 9), 0)
-    biolum_glow = make_glow_bgr(biolum_mask, 19.0, 15.0, 4.0)
+    biolum_glow = make_glow_bgr(biolum_mask, 22.0, 18.0, 5.0)
+
+    # Subtle open water gentle advection
+    water_flow_mask = cv2.GaussianBlur((in_shafts | is_biolum).astype(np.float32), (25, 25), 0)
 
     np.random.seed(707)
-    n_bub = 52
+    n_bub = 85
     bx0 = np.random.uniform(0.06, 0.94, n_bub) * W
-    by0 = np.random.uniform(0.20, 0.96, n_bub) * H
-    b_rise = np.random.uniform(85.0, 175.0, n_bub)
-    b_sway = np.random.uniform(10.0, 22.0, n_bub)
+    by0 = np.random.uniform(0.18, 0.96, n_bub) * H
+    b_rise = np.random.uniform(85.0, 180.0, n_bub)
+    b_sway = np.random.uniform(10.0, 24.0, n_bub)
     b_off = np.random.uniform(0.0, 1.0, n_bub)
-    b_rad = np.random.uniform(1.5, 3.2, n_bub)
-    b_alpha = np.random.uniform(0.40, 0.78, n_bub)
+    b_rad = np.random.uniform(1.5, 3.4, n_bub)
+    b_alpha = np.random.uniform(0.42, 0.82, n_bub)
 
-    proc = open_nvenc(out_path)
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 4
+    cycle_w = 8.0
+
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
+        t1 = (prog * num_cycles) % 1.0
+        t2 = (t1 + 0.5) % 1.0
+        w_blend = float(np.sin(t1 * np.pi) ** 2.0)
+
         sp = float(np.sin(phase) * 0.5 + 0.5)
         bp = float(np.sin(phase * 2.0) * 0.5 + 0.5)
-        frame_u8 = np.clip(img_f + sp * shaft_glow + bp * biolum_glow, 0, 255).astype(np.uint8)
 
+        dx1 = (t1 - 0.5) * cycle_w * water_flow_mask
+        dx2 = (t2 - 0.5) * cycle_w * water_flow_mask
+        f1 = cv2.remap(img, X_GRID + dx1, Y_GRID, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+        f2 = cv2.remap(img, X_GRID + dx2, Y_GRID, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+        frame = f1 * w_blend + f2 * (1.0 - w_blend)
+        frame += sp * shaft_glow + bp * biolum_glow
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
         p_prog = (prog + b_off) % 1.0
         p_a = (np.sin(p_prog * np.pi) ** 1.5) * b_alpha
         draw_soft_particles(frame_u8, bx0 + np.sin(p_prog * 2.0 * np.pi) * b_sway, by0 - p_prog * b_rise, b_rad, (255, 240, 170), p_a)
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 07", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
 # REALM 08: Cyber-Aegis Megacity (Zero-Seam Shield, Wet Neon & Rain Streaks)
 # ==============================================================================
-def render_08_cyber():
+def render_08_cyber(cq=15):
     print("\n[08/11] Rendering Realm 08: Cyber-Aegis Neo-Tokyo Bastion...", flush=True)
     t0 = time.time()
     img = load_master("08_cyber_aegis_megacity_4k.jpg")
@@ -583,26 +652,26 @@ def render_08_cyber():
 
     is_shield = (NY <= 0.52) & ((b > 135) | (r > 135))
     shield_mask = cv2.GaussianBlur(is_shield.astype(np.float32), (19, 19), 0)
-    shield_glow = make_glow_bgr(shield_mask, 19.0, 4.0, 13.0)
+    shield_glow = make_glow_bgr(shield_mask, 22.0, 5.0, 15.0)
 
     is_wet_road = (NY >= 0.68) & ((b > 95) | (r > 95))
     road_mask = cv2.GaussianBlur(is_wet_road.astype(np.float32), (15, 15), 0)
-    road_glow = make_glow_bgr(road_mask, 16.0, 11.0, 9.0)
+    road_glow = make_glow_bgr(road_mask, 18.0, 13.0, 10.0)
 
     is_neon = (NY >= 0.25) & (NY <= 0.78) & ((b > 200) | (r > 200)) & (np.abs(b - r) > 50)
     neon_mask = cv2.GaussianBlur(is_neon.astype(np.float32), (9, 9), 0)
-    neon_glow = make_glow_bgr(neon_mask, 15.0, 3.0, 15.0)
+    neon_glow = make_glow_bgr(neon_mask, 18.0, 4.0, 18.0)
 
     np.random.seed(808)
-    n_rain = 75
+    n_rain = 135
     rx0 = np.random.uniform(0.02, 0.98, n_rain) * W
     ry0 = np.random.uniform(0.0, 0.82, n_rain) * H
-    r_fall = np.random.uniform(180.0, 310.0, n_rain)
-    r_len = np.random.uniform(18.0, 32.0, n_rain)
+    r_fall = np.random.uniform(180.0, 320.0, n_rain)
+    r_len = np.random.uniform(18.0, 36.0, n_rain)
     r_off = np.random.uniform(0.0, 1.0, n_rain)
-    r_alpha = np.random.uniform(0.28, 0.55, n_rain)
+    r_alpha = np.random.uniform(0.32, 0.65, n_rain)
 
-    proc = open_nvenc(out_path)
+    proc = open_nvenc(out_path, cq=cq)
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
@@ -629,12 +698,13 @@ def render_08_cyber():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 08", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 09: Autumn Dragon Valley (Clean Inpaint + Zero-Seam Falls + Maple Drift)
+# REALM 09: Autumn Dragon Valley (Clean Inpaint + Rushing Falls + Maple Swirl)
 # ==============================================================================
-def render_09_valley():
+def render_09_valley(cq=15):
     print("\n[09/11] Rendering Realm 09: Autumn Dragon Valley...", flush=True)
     t0 = time.time()
     img = load_master("09_autumn_dragon_valley_4k.jpg")
@@ -693,10 +763,9 @@ def render_09_valley():
         lantern_mask += np.clip(np.exp(-l_dist_sq), 0.0, 1.0)
     lantern_mask = np.clip(lantern_mask, 0.0, 1.0)
 
-    glow_1x = make_glow_bgr(mist_mask, 8.0, 8.0, 8.0) + make_glow_bgr(godray_mask, 1.5, 4.5, 6.0)
-    glow_2x = make_glow_bgr(lantern_mask, 3.5, 10.0, 15.0)
+    glow_1x = make_glow_bgr(mist_mask, 10.0, 10.0, 10.0) + make_glow_bgr(godray_mask, 2.0, 5.0, 7.0)
+    glow_2x = make_glow_bgr(lantern_mask, 4.0, 12.0, 18.0)
 
-    # Crop waterfall box for fast remap
     fy0, fy1 = int(0.30 * H), int(0.77 * H)
     fx0, fx1 = int(0.32 * W), int(0.66 * W)
     f_crop = base_img[fy0:fy1, fx0:fx1]
@@ -720,23 +789,23 @@ def render_09_valley():
 
     leaf_colors = [(25, 40, 215), (20, 130, 245), (30, 85, 220), (15, 110, 235)]
     leaves = []
-    for k in range(14):
+    for k in range(36):
         leaves.append({
-            "x_start": np.random.uniform(0.12, 0.82) * W,
-            "y_start": np.random.uniform(0.18, 0.72) * H,
-            "fall_dist": np.random.uniform(28.0, 42.0),
-            "sway_amp": np.random.uniform(16.0, 26.0),
+            "x_start": np.random.uniform(0.10, 0.86) * W,
+            "y_start": np.random.uniform(0.12, 0.76) * H,
+            "fall_dist": np.random.uniform(50.0, 95.0),
+            "sway_amp": np.random.uniform(18.0, 32.0),
             "phase_offset": np.random.uniform(0.0, 1.0),
             "base_angle": np.random.uniform(0.0, 360.0),
-            "rot_amp": np.random.uniform(15.0, 30.0),
+            "rot_amp": np.random.uniform(20.0, 45.0),
             "color": leaf_colors[k % len(leaf_colors)],
             "sprite": leaf_sprites[k % len(leaf_sprites)],
-            "max_alpha": np.random.uniform(0.70, 0.88),
+            "max_alpha": np.random.uniform(0.72, 0.90),
         })
 
-    proc = open_nvenc(out_path)
-    num_cycles = 4
-    cycle_h = 15.0
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 7
+    cycle_h = 22.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -754,7 +823,7 @@ def render_09_valley():
         f1 = cv2.remap(f_crop, xg_crop, yg_crop - dy1, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         f2 = cv2.remap(f_crop, xg_crop, yg_crop - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
         wf_frame = f1 * w_blend + f2 * (1.0 - w_blend)
-        sparkle = ((np.sin(ny_crop * 30.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * fm_crop * 13.0
+        sparkle = ((np.sin(ny_crop * 30.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * fm_crop * 16.0
         wf_frame += sparkle[:, :, np.newaxis]
         frame[fy0:fy1, fx0:fx1] = wf_frame
 
@@ -788,13 +857,14 @@ def render_09_valley():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 09", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 10: Celestial Starfall Observatory (Solid Mountains/Spire + Zero-Seam Sky)
+# REALM 10: Celestial Starfall Observatory (Solid Mountains + Cosmic Bolides)
 # ==============================================================================
-def render_10_starfall():
-    print("\n[10/11] Rendering Realm 10: Celestial Starfall Observatory (Zero Mountain/Spire Warp)...", flush=True)
+def render_10_starfall(cq=15):
+    print("\n[10/11] Rendering Realm 10: Celestial Starfall Observatory...", flush=True)
     t0 = time.time()
     img = load_master("10_celestial_starfall_spire_4k.jpg")
     out_path = os.path.join(OUT_DIR, "10_celestial_starfall_spire_live.mp4")
@@ -807,7 +877,6 @@ def render_10_starfall():
     )
     sky_safe_mask = cv2.GaussianBlur((~in_mountain_or_spire).astype(np.float32), (25, 25), 0)
 
-    # Crop galaxy region (top-left sky only!) for fast remap
     gy1 = int(0.47 * H)
     gx1 = int(0.50 * W)
     g_crop = img[:gy1, :gx1]
@@ -827,10 +896,9 @@ def render_10_starfall():
     is_obs_win = (NY >= 0.42) & (NY <= 0.88) & (NX >= 0.36) & (NX <= 0.65) & (r > 165) & (g > 100) & (b < 90)
     obs_win_mask = cv2.GaussianBlur(is_obs_win.astype(np.float32), (7, 7), 0)
 
-    glow_1x = make_glow_bgr(gal_glow_full, 15.5, 4.0, 11.5)
-    glow_2x = make_glow_bgr(sun_core_mask, 3.0, 19.5, 27.0) + make_glow_bgr(obs_win_mask, 1.5, 10.5, 16.5)
+    glow_1x = make_glow_bgr(gal_glow_full, 18.0, 5.0, 13.0)
+    glow_2x = make_glow_bgr(sun_core_mask, 3.0, 19.5, 27.0) + make_glow_bgr(obs_win_mask, 2.0, 12.5, 19.5)
 
-    # Extract top painted streak positions for serene bolides
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     angle_rad = np.radians(140.0)
     dir_x, dir_y = float(np.cos(angle_rad)), float(np.sin(angle_rad))
@@ -857,19 +925,32 @@ def render_10_starfall():
             if length > 28 and (length / (width + 1e-3)) > 2.2:
                 anchored.append((rcx, rcy, length))
     anchored.sort(key=lambda s: s[2], reverse=True)
+
     bolides = []
-    for idx, (scx, scy, slen) in enumerate(anchored[:6]):
+    n_bolides = min(10, len(anchored))
+    for idx, (scx, scy, slen) in enumerate(anchored[:n_bolides]):
         bolides.append({
-            "start_t": idx / 6.0,
-            "life_dur": 0.28,
+            "start_t": idx / float(n_bolides),
+            "life_dur": 0.25,
             "anchor_x": scx,
             "anchor_y": scy,
-            "trail_len": max(slen * 1.35, 105.0),
+            "trail_len": max(slen * 1.35, 115.0),
             "color": (255, 248, 230) if idx % 2 == 0 else (255, 235, 255),
             "bloom_color": (255, 190, 100) if idx % 2 == 0 else (210, 140, 255),
         })
 
-    proc = open_nvenc(out_path)
+    # Ambient stardust around observatory spire
+    np.random.seed(1010)
+    n_dust = 45
+    dx0 = np.random.uniform(0.35, 0.70, n_dust) * W
+    dy0 = np.random.uniform(0.25, 0.65, n_dust) * H
+    d_rise = np.random.uniform(35.0, 75.0, n_dust)
+    d_sway = np.random.uniform(8.0, 18.0, n_dust)
+    d_off = np.random.uniform(0.0, 1.0, n_dust)
+    d_rad = np.random.uniform(1.2, 2.2, n_dust)
+    d_alpha = np.random.uniform(0.40, 0.80, n_dust)
+
+    proc = open_nvenc(out_path, cq=cq)
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
@@ -878,7 +959,7 @@ def render_10_starfall():
         p2 = float(np.sin(phase * 2.0) * 0.5 + 0.5)
 
         frame = img_f.copy()
-        swirl_angle = 0.022 * sin_p * swirl_weight
+        swirl_angle = 0.032 * sin_p * swirl_weight
         new_angle = angle_gal + swirl_angle
         map_x = (gal_cx + r_gal * np.cos(new_angle)).astype(np.float32)
         map_y = (gal_cy + r_gal * np.sin(new_angle)).astype(np.float32)
@@ -887,6 +968,12 @@ def render_10_starfall():
         frame += p1 * glow_1x + p2 * glow_2x
         frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
 
+        # Draw ambient spire stardust
+        p_prog = (prog + d_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * d_alpha
+        draw_soft_particles(frame_u8, dx0 + np.sin(p_prog * 2.0 * np.pi) * d_sway, dy0 - p_prog * d_rise, d_rad, (240, 220, 255), p_a)
+
+        # Draw dynamic bolides
         bloom_layer = np.zeros_like(frame_u8)
         for bol in bolides:
             t_rel = (prog - bol["start_t"]) % 1.0
@@ -899,11 +986,11 @@ def render_10_starfall():
                 tx = int(hx - dir_x * cur_trail)
                 ty = int(hy - dir_y * cur_trail)
                 alpha = float(np.sin(b_prog * np.pi) ** 1.5)
-                b_val = int(155 * alpha)
+                b_val = int(165 * alpha)
                 b_col = tuple(int(c * (b_val / 255.0)) for c in bol["bloom_color"])
                 cv2.line(bloom_layer, (tx, ty), (hx, hy), b_col, 3, lineType=cv2.LINE_AA)
                 cv2.circle(bloom_layer, (hx, hy), 3, b_col, -1, lineType=cv2.LINE_AA)
-                c_val = int(235 * alpha)
+                c_val = int(245 * alpha)
                 c_col = tuple(int(c * (c_val / 255.0)) for c in bol["color"])
                 cv2.line(frame_u8, (tx, ty), (hx, hy), c_col, 2, lineType=cv2.LINE_AA)
                 cv2.circle(frame_u8, (hx, hy), 2, (c_val, c_val, c_val), -1, lineType=cv2.LINE_AA)
@@ -912,13 +999,14 @@ def render_10_starfall():
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 10", t0, out_path)
+    return out_path
 
 
 # ==============================================================================
-# REALM 11: Ethereal Dreamscript Nexus (Solid Marble/Glass + Zero-Seam Clouds)
+# REALM 11: Ethereal Dreamscript Nexus (Zero Bridge Warp + Rolling Cloud Ocean)
 # ==============================================================================
-def render_11_dreamscript():
-    print("\n[11/11] Rendering Realm 11: Ethereal Dreamscript Nexus (Zero Bridge/Pillar Warp)...", flush=True)
+def render_11_dreamscript(cq=14):
+    print("\n[11/11] Rendering Realm 11: Ethereal Dreamscript Nexus...", flush=True)
     t0 = time.time()
     img = load_master("11_ethereal_dreamscript_4k.jpg")
     out_path = os.path.join(OUT_DIR, "11_ethereal_dreamscript_live.mp4")
@@ -938,11 +1026,10 @@ def render_11_dreamscript():
     in_ribbon = (NY >= 0.02) & (NY <= 0.46) & (lum > 80) & (b > 105)
     ribbon_mask = cv2.GaussianBlur(in_ribbon.astype(np.float32), (21, 21), 0)
 
-    glow_cyan = make_glow_bgr(cyan_mask, 17.0, 14.0, 2.0) + make_glow_bgr(ribbon_mask, 10.5, 3.0, 7.0)
-    glow_violet = make_glow_bgr(violet_mask, 13.0, 2.0, 15.0)
-    glow_zodiac = make_glow_bgr(zodiac_mask, 2.0, 11.5, 16.5)
+    glow_cyan = make_glow_bgr(cyan_mask, 19.0, 16.0, 3.0) + make_glow_bgr(ribbon_mask, 11.0, 3.5, 7.5)
+    glow_violet = make_glow_bgr(violet_mask, 15.0, 3.0, 17.0)
+    glow_zodiac = make_glow_bgr(zodiac_mask, 3.0, 13.0, 19.0)
 
-    # Surgical Cloud Pocket Mask (strictly in left cloud sea & lower abyss, NEVER touching marble bridge!)
     cy0 = int(0.52 * H)
     in_left_clouds = (NX[cy0:, :] >= 0.09) & (NX[cy0:, :] <= 0.34) & (NY[cy0:, :] >= 0.54) & (NY[cy0:, :] <= 0.78) & (NY[cy0:, :] < (0.92 - NX[cy0:, :] * 0.65))
     in_lower_clouds = (NX[cy0:, :] >= 0.46) & (NX[cy0:, :] <= 0.68) & (NY[cy0:, :] >= 0.80) & (NY[cy0:, :] <= 0.96)
@@ -951,18 +1038,18 @@ def render_11_dreamscript():
     xg_crop, yg_crop = np.meshgrid(np.arange(W, dtype=np.float32), np.arange(H - cy0, dtype=np.float32))
 
     np.random.seed(1111)
-    n_dust = 46
+    n_dust = 70
     dx0 = np.random.uniform(0.08, 0.92, n_dust) * W
-    dy0 = np.random.uniform(0.25, 0.94, n_dust) * H
+    dy0 = np.random.uniform(0.22, 0.94, n_dust) * H
     d_rise = np.random.uniform(60.0, 130.0, n_dust)
     d_sway = np.random.uniform(12.0, 25.0, n_dust)
     d_off = np.random.uniform(0.0, 1.0, n_dust)
     d_rad = np.random.uniform(1.3, 2.5, n_dust)
-    d_alpha = np.random.uniform(0.45, 0.85, n_dust)
+    d_alpha = np.random.uniform(0.48, 0.88, n_dust)
 
-    proc = open_nvenc(out_path, cq=14)
-    num_cycles = 4
-    cycle_w = 10.0
+    proc = open_nvenc(out_path, cq=cq)
+    num_cycles = 6
+    cycle_w = 16.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
@@ -988,33 +1075,33 @@ def render_11_dreamscript():
         p_a = (np.sin(p_prog * np.pi) ** 1.5) * d_alpha
         px = dx0 + np.sin(p_prog * 2.0 * np.pi) * d_sway
         py = dy0 - p_prog * d_rise
-        draw_soft_particles(frame_u8, px[:24], py[:24], d_rad[:24], (255, 225, 130), p_a[:24])
-        draw_soft_particles(frame_u8, px[24:], py[24:], d_rad[24:], (250, 175, 225), p_a[24:])
+        draw_soft_particles(frame_u8, px[:35], py[:35], d_rad[:35], (255, 225, 130), p_a[:35])
+        draw_soft_particles(frame_u8, px[35:], py[35:], d_rad[35:], (250, 175, 225), p_a[35:])
         proc.stdin.write(frame_u8.tobytes())
 
     finish_nvenc(proc, "Realm 11", t0, out_path)
+    return out_path
 
 
-def sync_all_suites():
-    destinations = [
-        r"E:\GitHub\aegis-wallpaper\assets\interactive",
-        r"C:\Users\agung\Pictures\Wallpapers\Interactive_Fantasy_Suite",
-        r"C:\Users\agung\AppData\Local\Lively Wallpaper\Library\wallpapers\aegis_interactive",
-        r"C:\Users\agung\AppData\Local\Lively Wallpaper\Library\SaveData\wptmp\lrosxyrt.a4j",
-    ]
-    mp4_files = [
-        "01_citadel_twilight_live.mp4",
-        "02_mystical_forest_shrine_live.mp4",
-        "03_mountain_aurora_snow_live.mp4",
-        "04_celestial_dunes_oasis_live.mp4",
-        "05_floating_sky_citadel_live.mp4",
-        "06_volcanic_obsidian_forge_live.mp4",
-        "07_sunken_coral_atlantis_live.mp4",
-        "08_cyber_aegis_megacity_live.mp4",
-        "09_autumn_dragon_valley_live.mp4",
-        "10_celestial_starfall_spire_live.mp4",
-        "11_ethereal_dreamscript_live.mp4",
-    ]
+# ==============================================================================
+# RENDER REGISTRY & SYNC DISPATCHER
+# ==============================================================================
+REALM_RENDERERS = {
+    1: ("Valerius Citadel Twilight", "01_citadel_twilight_live.mp4", render_01_citadel),
+    2: ("Eldertree Mystical Shrine", "02_mystical_forest_shrine_live.mp4", render_02_shrine),
+    3: ("Frostpeak Aurora Fortress", "03_mountain_aurora_snow_live.mp4", render_03_aurora),
+    4: ("Celestial Dunes Oasis", "04_celestial_dunes_oasis_live.mp4", render_04_dunes),
+    5: ("Floating Sky Citadel", "05_floating_sky_citadel_live.mp4", render_05_sky_citadel),
+    6: ("Volcanic Obsidian Forge", "06_volcanic_obsidian_forge_live.mp4", render_06_forge),
+    7: ("Sunken Coral Atlantis", "07_sunken_coral_atlantis_live.mp4", render_07_atlantis),
+    8: ("Cyber-Aegis Megacity", "08_cyber_aegis_megacity_live.mp4", render_08_cyber),
+    9: ("Autumn Dragon Valley", "09_autumn_dragon_valley_live.mp4", render_09_valley),
+    10: ("Celestial Starfall Observatory", "10_celestial_starfall_spire_live.mp4", render_10_starfall),
+    11: ("Ethereal Dreamscript Nexus", "11_ethereal_dreamscript_live.mp4", render_11_dreamscript),
+}
+
+
+def sync_suites(selected_indices=None):
     web_files = [
         "index.html",
         "style.css",
@@ -1024,8 +1111,11 @@ def sync_all_suites():
         os.path.join("js", "particles.js"),
     ]
 
-    print("\nSyncing all 11 master MP4 videos and interactive web suite to all deployment targets...", flush=True)
-    for dst in destinations:
+    target_indices = selected_indices if selected_indices else list(REALM_RENDERERS.keys())
+    mp4_files = [REALM_RENDERERS[idx][1] for idx in target_indices]
+
+    print(f"\nSyncing {len(mp4_files)} master MP4 video(s) and interactive web suite to deployment targets...", flush=True)
+    for dst in DESTINATIONS:
         if not os.path.exists(dst):
             continue
         for f in mp4_files:
@@ -1042,18 +1132,62 @@ def sync_all_suites():
         print(f"  [SYNCED] -> {dst}", flush=True)
 
 
+def list_realms():
+    print("\n🌌 Aegis Sovereign Master Realm Registry (11 Realms):")
+    print("-" * 75)
+    print(f"{'#':<4} {'Realm Name':<35} {'Output Video File':<35}")
+    print("-" * 75)
+    for idx, (name, fname, _) in REALM_RENDERERS.items():
+        print(f"{idx:<4} {name:<35} {fname:<35}")
+    print("-" * 75)
+
+
+def parse_realm_indices(realm_arg):
+    if realm_arg.lower() == "all":
+        return list(REALM_RENDERERS.keys())
+    indices = []
+    for part in realm_arg.split(","):
+        part = part.strip()
+        if part.isdigit():
+            idx = int(part)
+            if idx in REALM_RENDERERS:
+                indices.append(idx)
+        else:
+            # Match by name fragment
+            part_lower = part.lower()
+            for idx, (name, fname, _) in REALM_RENDERERS.items():
+                if part_lower in name.lower() or part_lower in fname.lower():
+                    indices.append(idx)
+    return sorted(list(set(indices)))
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Aegis Sovereign Deterministic Motion Engine")
+    parser.add_argument("--realm", "-r", type=str, default="all", help="Realm number (1-11), name, or 'all'")
+    parser.add_argument("--list", "-l", action="store_true", help="List all available realms and exit")
+    parser.add_argument("--no-sync", action="store_true", help="Skip syncing output files to external directories")
+    parser.add_argument("--cq", type=int, default=15, help="NVENC Constant Quality level (14-18, default 15)")
+    args = parser.parse_args()
+
+    if args.list:
+        list_realms()
+        sys.exit(0)
+
+    target_realms = parse_realm_indices(args.realm)
+    if not target_realms:
+        print(f"Error: No matching realms found for '{args.realm}'. Use --list to view valid realms.")
+        sys.exit(1)
+
     t_total = time.time()
-    render_01_citadel()
-    render_02_shrine()
-    render_03_aurora()
-    render_04_dunes()
-    render_05_sky_citadel()
-    render_06_forge()
-    render_07_atlantis()
-    render_08_cyber()
-    render_09_valley()
-    render_10_starfall()
-    render_11_dreamscript()
-    sync_all_suites()
-    print(f"\nAll 11 Master Realms rendered and synced in {time.time() - t_total:.1f}s!", flush=True)
+    rendered_files = []
+    print(f"Starting deterministic rendering for {len(target_realms)} realm(s)...")
+
+    for idx in target_realms:
+        name, _, fn = REALM_RENDERERS[idx]
+        out_f = fn(cq=args.cq)
+        rendered_files.append(out_f)
+
+    if not args.no_sync:
+        sync_suites(selected_indices=target_realms)
+
+    print(f"\n[DONE] {len(target_realms)} Realm(s) rendered in {time.time() - t_total:.1f}s!", flush=True)
