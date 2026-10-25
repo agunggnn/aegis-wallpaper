@@ -78,8 +78,9 @@ To make waterfalls, rivers, and lava flow continuously forever without any seam,
   where $t_1 = (i \cdot N / N_{total}) \pmod{1.0}$ and $t_2 = (t_1 + 0.5) \pmod{1.0}$.
 - The two fields are blended using an energy-preserving Hann/sine-squared window:
   $$W = \sin^2(t_1 \cdot \pi)$$
-  $$I_{frame} = I_{remap1} \cdot (1 - W) + I_{remap2} \cdot W$$
-- **Mathematical Result**: The boundary between the last frame and frame 0 has a mean difference of `< 1.4` (identical to adjacent frame delta), achieving a **100% mathematically seamless loop**.
+  $$I_{frame} = I_{remap1} \cdot W + I_{remap2} \cdot (1 - W)$$
+  *(Critical Invariant: At $t_1 = 0$, $I_{remap1}$ wraps discontinuously from $+0.5$ to $-0.5$, so its weight $W$ MUST be $0.0$, while $I_{remap2}$ is at $t_2 = 0.5$ with zero displacement and weight $1 - W = 1.0$. At $t_1 = 0.5$, $I_{remap2}$ wraps discontinuously and its weight $1 - W$ is $0.0$. Inverting $W$ and $1-W$ exposes both sawtooth jumps!)*
+- **Mathematical Result**: The boundary between the last frame and frame 0 has a mean difference of `< 1.0` (identical to adjacent frame delta), achieving a **100% mathematically seamless loop**.
 
 ### B. Harmonic Frequency Shimmer & Foam Gleam
 Static remap alone looks like sliding glass. To give water and lava realistic physical texture:

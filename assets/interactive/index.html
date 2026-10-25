@@ -8,13 +8,12 @@
 </head>
 <body>
     <!-- 4K UHD Master Artwork Layer (Pristine Razor-Sharp Resolution) -->
-    <img id="bgImage" class="bg-layer active" src="01_citadel_twilight_4k.jpg" alt="Wallpaper Background">
+    <img id="bgImage" class="bg-layer active" src="11_ethereal_dreamscript_4k.jpg" alt="Wallpaper Background">
     
-    <!-- Optional Hardware-Decoded Live MP4 Video Layer -->
-    <video id="bgVideo" class="bg-layer" loop muted playsinline preload="none"></video>
+    <!-- Hardware-Decoded Live MP4 Video Layer -->
+    <video id="bgVideo" class="bg-layer" loop muted playsinline preload="auto"></video>
     
-    <!-- WebGL Hardware Living Shader Engine (Vortex Swirl, Flowing Rivers, Magma Churn, 2.5D Parallax) -->
-    
+    <!-- Interactive Atmospheric & Click FX Layer -->
     <canvas id="wallpaperCanvas"></canvas>
     
     <!-- Gaming, Telemetry & Audio Lounge Interface Layer -->
@@ -82,7 +81,7 @@
         <div class="quest-card">
             <div class="realm-badge">
                 <span class="compass-icon">✦</span>
-                <span id="realmName">CITADEL OF VALERIUS</span>
+                <span id="realmName">ETHEREAL DREAMSCRIPT NEXUS</span>
             </div>
             <div class="quest-title">QUEST: SOVEREIGN ASCENDANCY</div>
             <div class="realm-clock" id="realmClock">12:00:00</div>
@@ -173,9 +172,9 @@
             </div>
         </div>
 
-        <!-- Bottom-Right: Realm Selector Hotbar (All 10 Realms) -->
+        <!-- Bottom-Right: Realm Selector Hotbar (All 11 Realms) -->
         <div class="realm-hotbar">
-            <button class="hotbar-btn active" id="btnRealm0" data-idx="0">1. Citadel</button>
+            <button class="hotbar-btn" id="btnRealm0" data-idx="0">1. Citadel</button>
             <button class="hotbar-btn" id="btnRealm1" data-idx="1">2. Shrine</button>
             <button class="hotbar-btn" id="btnRealm2" data-idx="2">3. Aurora</button>
             <button class="hotbar-btn" id="btnRealm3" data-idx="3">4. Dunes</button>
@@ -185,6 +184,7 @@
             <button class="hotbar-btn" id="btnRealm7" data-idx="7">8. Cyber</button>
             <button class="hotbar-btn" id="btnRealm8" data-idx="8">9. Valley</button>
             <button class="hotbar-btn" id="btnRealm9" data-idx="9">10. Starfall</button>
+            <button class="hotbar-btn active" id="btnRealm10" data-idx="10">11. Nexus</button>
             <button class="hotbar-btn next-btn" id="btnNextRealm">Next ➔</button>
         </div>
     </div>
@@ -195,7 +195,6 @@
     <script src="js/magic.js"></script>
     <script src="js/sysinfo.js"></script>
     <script src="js/youtube.js"></script>
-    
     <script src="js/realm_fx.js"></script>
     <script src="js/main.js"></script>
 </body>

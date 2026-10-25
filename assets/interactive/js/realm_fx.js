@@ -342,7 +342,7 @@ class RealmFXEngine {
                 ctx.moveTo(s.x - spikeLen, s.y);
                 ctx.lineTo(s.x + spikeLen, s.y);
                 ctx.moveTo(s.x, s.y - spikeLen);
-                ctx.lineTo(s.x + spikeLen, s.y);
+                ctx.lineTo(s.x, s.y + spikeLen);
                 ctx.stroke();
             }
         }

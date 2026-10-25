@@ -4,17 +4,6 @@ const bgVideo = document.getElementById('bgVideo');
 const canvas = document.getElementById('wallpaperCanvas');
 const ctx = canvas.getContext('2d');
 
-// Initialize High-Performance WebGL Living Shader Engine
-let livingEngine = null;
-try {
-    if (window.LivingShaderEngine) {
-        livingEngine = new LivingShaderEngine('livingCanvas');
-        window.livingEngine = livingEngine;
-    }
-} catch (e) {
-    console.warn('[Aegis] WebGL Living Shader fallback:', e);
-}
-
 const scenes = [
     { id: "citadel", image: "01_citadel_twilight_4k.jpg", file: "01_citadel_twilight_live.mp4", name: "VALERIUS CITADEL TWILIGHT" },
     { id: "shrine", image: "02_mystical_forest_shrine_4k.jpg", file: "02_mystical_forest_shrine_live.mp4", name: "ELDERTREE MYSTICAL SHRINE" },
@@ -29,12 +18,12 @@ const scenes = [
     { id: "dreamscript", image: "11_ethereal_dreamscript_4k.jpg", file: "11_ethereal_dreamscript_live.mp4", name: "ETHEREAL DREAMSCRIPT NEXUS" }
 ];
 
-let currentSceneIdx = 0;
+let currentSceneIdx = 10;
 let autoRotateEnabled = true;
 let rotateIntervalMinutes = 30;
 let lastRotationTime = Date.now();
-let ultraLightMode = true; // Eco / Ultra-Lightweight by default!
-let renderEngineMode = 1;  // 0: Pure 4K Canvas FX (Default), 1: Video MP4
+let ultraLightMode = true; // Eco / Ultra-Lightweight by default
+let renderEngineMode = 1;  // 0: Pure 4K Canvas FX, 1: Hardware Live Video MP4 (Default)
 
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -50,7 +39,7 @@ resizeCanvas();
 // Scene Switching & Auto-Rotation Logic
 // ============================================================
 function setScene(idx) {
-    idx = (idx + scenes.length) % scenes.length;
+    idx = ((idx % scenes.length) + scenes.length) % scenes.length;
     currentSceneIdx = idx;
     window.currentSceneIdx = idx;
     lastRotationTime = Date.now();
@@ -68,22 +57,22 @@ function setScene(idx) {
             bgVideo.pause();
         }
     } else {
-        // Mode 1: Video Loop
-        if (bgVideo) {
-            bgVideo.src = scene.file;
-            bgVideo.classList.add('active');
-            bgVideo.load();
-            bgVideo.play().catch(() => {});
-        }
+        // Mode 1: Hardware Live Video MP4 Loop
         if (bgImage) {
+            bgImage.src = scene.image; // Keep matching poster underneath during transitions
             bgImage.classList.remove('active');
+        }
+        if (bgVideo) {
+            if (!bgVideo.src.endsWith(scene.file)) {
+                bgVideo.src = scene.file;
+                bgVideo.load();
+            }
+            bgVideo.classList.add('active');
+            bgVideo.play().catch(() => {});
         }
     }
 
-    // Notify WebGL Living Shader Engine (Vortex Swirl, Flowing Rivers, Magma Churn, Parallax)
-    
-
-    // Notify dedicated Realm FX Engine
+    // Notify dedicated Realm FX Engine (used when renderEngineMode === 0)
     if (window.realmFX) {
         window.realmFX.setRealm(idx);
     }
@@ -91,7 +80,7 @@ function setScene(idx) {
     const realmElem = document.getElementById('realmName');
     if (realmElem) realmElem.textContent = scene.name;
 
-    // Update active hotbar button
+    // Update active hotbar button across all 11 realms
     for (let i = 0; i < scenes.length; i++) {
         const btn = document.getElementById('btnRealm' + i);
         if (btn) {
@@ -116,13 +105,13 @@ function prevScene() {
     setScene(currentSceneIdx - 1);
 }
 
-// Hotbar Button Bindings
-for (let i = 0; i < 10; i++) {
+// Hotbar Button Bindings (All 11 Realms)
+for (let i = 0; i < scenes.length; i++) {
     document.getElementById('btnRealm' + i)?.addEventListener('click', () => setScene(i));
 }
 document.getElementById('btnNextRealm')?.addEventListener('click', nextScene);
 
-// Keyboard Shortcuts: [N] Next, [P] Prev, [1]-[9],[0] Direct Realm, [L] Eco Mode, [H] HUD Toggle
+// Keyboard Shortcuts: [N] Next, [P] Prev, [1]-[9],[0],[-] Direct Realm, [L] Eco Mode, [H] HUD Toggle
 window.addEventListener('keydown', (e) => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     if (e.key === 'n' || e.key === 'N') nextScene();
@@ -132,10 +121,12 @@ window.addEventListener('keydown', (e) => {
         if (target < scenes.length) setScene(target);
     } else if (e.key === '0') {
         if (scenes.length >= 10) setScene(9);
+    } else if (e.key === '-' || e.key === '=') {
+        if (scenes.length >= 11) setScene(10);
     } else if (e.key === 'l' || e.key === 'L') {
         ultraLightMode = !ultraLightMode;
         if (window.fireflyEngine) {
-            window.fireflyEngine.maxFireflies = ultraLightMode ? 12 : 50;
+            window.fireflyEngine.setCount(ultraLightMode ? 0 : 20);
         }
         console.log("⚡ [Aegis] Ultra-Lightweight Mode:", ultraLightMode ? "ON" : "OFF");
     } else if (e.key === 'h' || e.key === 'H') {
@@ -193,7 +184,6 @@ function handleDesktopClick(x, y) {
 // Bind interaction listeners to window, document, and canvas
 ['mousedown', 'pointerdown', 'click'].forEach(evt => {
     window.addEventListener(evt, (e) => {
-        // Prevent clicking HUD buttons or YouTube widget from triggering canvas burst
         if (e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.closest('#ytMusicWidget'))) return;
         handleDesktopClick(e.clientX, e.clientY);
     });
@@ -258,27 +248,15 @@ function livelyPropertyListener(name, val) {
             if (window.rippleFX) window.rippleFX.enabled = !!val;
             break;
         case "fireflyCount":
-            if (window.fireflyEngine) window.fireflyEngine.setCount(val);
-            break;
-        case "livingMotion":
-            if (window.livingEngine) window.livingEngine.motionEnabled = !!val;
-            break;
-        case "parallaxDepth":
-            if (window.livingEngine) window.livingEngine.parallaxStrength = (parseFloat(val) || 50) / 50.0;
-            break;
-        case "flowSpeed":
-            if (window.livingEngine) window.livingEngine.flowSpeed = (parseFloat(val) || 100) / 100.0;
+            if (window.fireflyEngine) window.fireflyEngine.setCount(parseInt(val) || 0);
             break;
         case "renderEngine":
             setRenderEngine(val);
             break;
         case "ultraLightMode":
             ultraLightMode = !!val;
-            if (window.fireflyEngine) {
-                window.fireflyEngine.setCount(ultraLightMode ? 10 : 50);
-            }
-            if (window.rippleFX) {
-                window.rippleFX.enabled = !ultraLightMode;
+            if (window.fireflyEngine && renderEngineMode === 1) {
+                window.fireflyEngine.setCount(ultraLightMode ? 0 : 16);
             }
             if (window.realmFX) {
                 window.realmFX.ultraLight = ultraLightMode;
@@ -291,7 +269,7 @@ function livelyPropertyListener(name, val) {
 }
 
 // ============================================================
-// 60FPS Physics Render Loop (Eco/Ultra-Lightweight Aware)
+// 60FPS Physics Render Loop
 // ============================================================
 function render() {
     if (document.hidden) {
@@ -299,30 +277,29 @@ function render() {
         return;
     }
 
-    // Render WebGL Living 4K Shader (Pixel motions: Galaxy Vortex, Rivers, Magma, Sway)
-    
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 0. Dedicated Sovereign Atmospheric Realm FX (Starfall Radial Shower, Ash, Rain, Leaves)
-    if (window.realmFX) {
+    // 0. Atmospheric Canvas Realm FX ONLY in Mode 0 (Static 4K Image mode).
+    // In Mode 1 (Hardware Live Video MP4), the MP4 already renders the deterministic
+    // scene motion, so we never draw duplicate canvas particles/gradients on top.
+    if (renderEngineMode === 0 && window.realmFX) {
         window.realmFX.updateAndRender(ctx);
     }
 
-    // 1. Fluid Water Ripple Physics
+    // 1. Fluid Water Ripple Physics on Click
     if (window.rippleFX && window.rippleFX.enabled) {
         window.rippleFX.update();
         window.rippleFX.render(ctx);
     }
 
-    // 2. Arcane Magic Runes & Blade Slashes
+    // 2. Arcane Magic Runes & Blade Slashes on Click
     if (window.magicEngine && window.magicEngine.enabled) {
         window.magicEngine.update();
         window.magicEngine.render(ctx);
     }
 
-    // 3. Floating Mana Fireflies
-    if (window.fireflyEngine && window.fireflyEngine.enabled) {
+    // 3. Optional Mana Fireflies (only when count > 0 and either Mode 0 or explicitly enabled)
+    if (window.fireflyEngine && window.fireflyEngine.enabled && window.fireflyEngine.particles.length > 0) {
         window.fireflyEngine.update();
         window.fireflyEngine.render(ctx);
     }
@@ -330,7 +307,12 @@ function render() {
     requestAnimationFrame(render);
 }
 
-// Initialize on active scene at launch (Default: Realm 10 Starfall Observatory)
-const initialScene = 8;
+// Initialize clean default: in Video MP4 mode + ultraLightMode, keep ambient canvas fireflies at 0
+// so the master deterministic MP4 video is 100% unobstructed.
+if (window.fireflyEngine && renderEngineMode === 1 && ultraLightMode) {
+    window.fireflyEngine.setCount(0);
+}
+
+const initialScene = 10;
 setScene(initialScene);
 requestAnimationFrame(render);
