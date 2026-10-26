@@ -1142,6 +1142,158 @@ def list_realms():
     print("-" * 75)
 
 
+def clamp(v, a, b):
+    return min(b, max(a, v))
+
+
+def render_dreamscript_realm(job_id_or_path, cq=15):
+    """
+    Renders a live seamless wallpaper loop directly from a Dreamscript Realm Builder job JSON.
+    Auto-binds motion parameters from structured element definitions (flow, drift, glow, rise, fall, still).
+    """
+    import json
+    job_file = job_id_or_path
+    if not os.path.exists(job_file):
+        job_file = os.path.join(r"E:\GitHub\Ethereal Dreamscript Dashboard\production\realms", f"{job_id_or_path}.job.json")
+    if not os.path.exists(job_file):
+        raise FileNotFoundError(f"Dreamscript realm job not found: {job_id_or_path}")
+
+    with open(job_file, "r", encoding="utf-8") as f:
+        job = json.load(f)
+
+    realm_id = job.get("id", os.path.splitext(os.path.basename(job_file))[0].replace(".job", ""))
+    realm_name = job.get("name", realm_id)
+    print(f"\n[Dreamscript] Rendering Realm: {realm_name} ({realm_id})...", flush=True)
+
+    img_path = os.path.join(r"E:\GitHub\Ethereal Dreamscript Dashboard\production\realms", f"{realm_id}.jpg")
+    if not os.path.exists(img_path):
+        img_path = os.path.join(r"E:\GitHub\Ethereal Dreamscript Dashboard\assets\bg", f"{realm_id}.jpg")
+    if not os.path.exists(img_path):
+        img_path = os.path.join(r"E:\GitHub\Ethereal Dreamscript Dashboard\assets\bg", "ui_realm.jpg")
+    if not os.path.exists(img_path):
+        raise FileNotFoundError(f"Source image plate not found for {realm_id}")
+
+    t0 = time.time()
+    raw = cv2.imread(img_path)
+    img = cv2.resize(raw, (W, H), interpolation=cv2.INTER_LANCZOS4)
+
+    elements = job.get("elements", [])
+    flow_mask = np.zeros((H, W), dtype=np.float32)
+    drift_mask = np.zeros((H, W), dtype=np.float32)
+    glow_mask = np.zeros((H, W), dtype=np.float32)
+    still_mask = np.zeros((H, W), dtype=np.float32)
+    particle_specs = []
+
+    for el in elements:
+        box = el.get("box", [0, 0, 1, 1])
+        x1 = int(clamp(box[0], 0, 1) * W)
+        y1 = int(clamp(box[1], 0, 1) * H)
+        x2 = int(clamp(box[0] + box[2], 0, 1) * W)
+        y2 = int(clamp(box[1] + box[3], 0, 1) * H)
+        motion = el.get("motion", "still")
+
+        if motion == "flow":
+            flow_mask[y1:y2, x1:x2] = 1.0
+        elif motion == "drift":
+            drift_mask[y1:y2, x1:x2] = 1.0
+        elif motion in ("glow", "flicker"):
+            glow_mask[y1:y2, x1:x2] = 1.0
+        elif motion in ("still", "lock"):
+            still_mask[y1:y2, x1:x2] = 1.0
+        elif motion in ("rise", "fall"):
+            particle_specs.append({
+                "x_range": (x1, x2),
+                "y_range": (y1, y2),
+                "motion": motion,
+                "count": 45
+            })
+
+    if np.max(flow_mask) > 0:
+        flow_mask = cv2.GaussianBlur(flow_mask, (21, 21), 0)
+        flow_mask = np.clip(flow_mask - still_mask, 0.0, 1.0)
+    if np.max(drift_mask) > 0:
+        drift_mask = cv2.GaussianBlur(drift_mask, (35, 35), 0)
+        drift_mask = np.clip(drift_mask - still_mask, 0.0, 1.0)
+    if np.max(glow_mask) > 0:
+        glow_mask = cv2.GaussianBlur(glow_mask, (15, 15), 0)
+
+    particles = []
+    np.random.seed(42)
+    for ps in particle_specs:
+        x_min, x_max = ps["x_range"]
+        y_min, y_max = ps["y_range"]
+        cnt = ps["count"]
+        direction = -1.0 if ps["motion"] == "rise" else 1.0
+        for _ in range(cnt):
+            particles.append({
+                "x0": np.random.uniform(x_min, x_max),
+                "y0": np.random.uniform(y_min, y_max),
+                "speed": np.random.uniform(40.0, 95.0) * direction,
+                "sway": np.random.uniform(10.0, 22.0),
+                "off": np.random.uniform(0.0, 1.0),
+                "rad": np.random.uniform(1.3, 2.4),
+                "alpha": np.random.uniform(0.45, 0.85),
+                "color": (255, 230, 140)
+            })
+
+    out_name = f"{realm_id}_live.mp4"
+    out_path = os.path.join(OUT_DIR, out_name)
+    proc = open_nvenc(out_path, cq=cq)
+
+    num_cycles = 6
+    cycle_d = 14.0
+    cycle_drift = 16.0
+    glow_bgr = make_glow_bgr(glow_mask, 3.0, 12.0, 18.0)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+        t1 = (prog * num_cycles) % 1.0
+        t2 = (t1 + 0.5) % 1.0
+        w_blend = float(np.sin(t1 * np.pi) ** 2.0)
+
+        dy1 = (t1 - 0.5) * cycle_d * flow_mask
+        dy2 = (t2 - 0.5) * cycle_d * flow_mask
+        dx1 = (t1 - 0.5) * cycle_drift * drift_mask
+        dx2 = (t2 - 0.5) * cycle_drift * drift_mask
+
+        f1 = cv2.remap(img, X_GRID - dx1, Y_GRID - dy1, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+        f2 = cv2.remap(img, X_GRID - dx2, Y_GRID - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
+        frame = f1 * w_blend + f2 * (1.0 - w_blend)
+
+        if np.max(glow_mask) > 0:
+            gp = float(np.sin(phase * 2.0) * 0.5 + 0.5)
+            frame += gp * glow_bgr
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        if particles:
+            p_xs = [p["x0"] + np.sin(((prog + p["off"]) % 1.0) * 2.0 * np.pi) * p["sway"] for p in particles]
+            p_ys = [p["y0"] + ((prog + p["off"]) % 1.0) * p["speed"] for p in particles]
+            p_rads = [p["rad"] for p in particles]
+            p_alphas = [(np.sin(((prog + p["off"]) % 1.0) * np.pi) ** 1.5) * p["alpha"] for p in particles]
+            draw_soft_particles(frame_u8, p_xs, p_ys, p_rads, (255, 230, 140), p_alphas)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, f"Dreamscript Realm [{realm_name}]", t0, out_path)
+
+    ds_realms_dir = r"E:\GitHub\Ethereal Dreamscript Dashboard\production\realms"
+    ds_aegis_dir = r"E:\GitHub\Ethereal Dreamscript Dashboard\aegis"
+    for d in (ds_realms_dir, ds_aegis_dir):
+        if os.path.exists(d):
+            shutil.copy2(out_path, os.path.join(d, out_name))
+            print(f"  [SYNCED] -> {d}\\{out_name}", flush=True)
+
+    job["status"] = "done"
+    job["video"] = f"production/realms/{out_name}"
+    job["renderedAt"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    with open(job_file, "w", encoding="utf-8") as f:
+        json.dump(job, f, indent=2)
+
+    return out_path
+
+
 def parse_realm_indices(realm_arg):
     if realm_arg.lower() == "all":
         return list(REALM_RENDERERS.keys())
@@ -1163,7 +1315,8 @@ def parse_realm_indices(realm_arg):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aegis Sovereign Deterministic Motion Engine")
-    parser.add_argument("--realm", "-r", type=str, default="all", help="Realm number (1-11), name, or 'all'")
+    parser.add_argument("--realm", "-r", type=str, default="", help="Realm number (1-11), name, or 'all'")
+    parser.add_argument("--job", "-j", type=str, default="", help="Dreamscript realm job ID or path to render directly from Realm Builder")
     parser.add_argument("--list", "-l", action="store_true", help="List all available realms and exit")
     parser.add_argument("--no-sync", action="store_true", help="Skip syncing output files to external directories")
     parser.add_argument("--cq", type=int, default=15, help="NVENC Constant Quality level (14-18, default 15)")
@@ -1173,9 +1326,24 @@ if __name__ == "__main__":
         list_realms()
         sys.exit(0)
 
-    target_realms = parse_realm_indices(args.realm)
+    if args.job:
+        t_total = time.time()
+        out_f = render_dreamscript_realm(args.job, cq=args.cq)
+        if not args.no_sync:
+            destinations = DESTINATIONS
+            for dst in destinations:
+                if os.path.exists(dst):
+                    dst_f = os.path.join(dst, os.path.basename(out_f))
+                    if os.path.abspath(out_f) != os.path.abspath(dst_f):
+                        shutil.copy2(out_f, dst_f)
+                        print(f"  [SYNCED] -> {dst_f}", flush=True)
+        print(f"\n[DONE] Dreamscript Realm rendered in {time.time() - t_total:.1f}s!", flush=True)
+        sys.exit(0)
+
+    realm_to_render = args.realm if args.realm else "all"
+    target_realms = parse_realm_indices(realm_to_render)
     if not target_realms:
-        print(f"Error: No matching realms found for '{args.realm}'. Use --list to view valid realms.")
+        print(f"Error: No matching realms found for '{realm_to_render}'. Use --list to view valid realms.")
         sys.exit(1)
 
     t_total = time.time()
