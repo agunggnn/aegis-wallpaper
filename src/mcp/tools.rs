@@ -42,8 +42,8 @@ pub fn get_tool_definitions() -> Vec<ToolDefinition> {
                     "active_scene": {
                         "type": "integer",
                         "minimum": 0,
-                        "maximum": 2,
-                        "description": "Index of live animated 4K video scene (0: Citadel Twilight Live, 1: Mystical Forest Shrine Live, 2: Mountain Aurora Fortress Live)."
+                        "maximum": 21,
+                        "description": "Index of live animated 4K video scene (0: Citadel, 16: Front Mission 5 Relic, 18: FM5 Vanguard, 19: FM3 Zenith Remaster, 20: RX-93 Nu Gundam, 21: SRW OG Alteisen)."
                     },
                     "sound_pack": {
                         "type": "string",

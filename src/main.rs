@@ -92,6 +92,18 @@ async fn main() -> Result<()> {
             "08 - Cyber-Aegis Neo-Tokyo Bastion",
             "09 - Autumn Dragon Valley",
             "10 - Celestial Starfall Observatory",
+            "11 - Ethereal Dreamscript Nexus",
+            "12 - Celestial Titan Dunes",
+            "13 - Octopath HD-2D Coastal Citadel",
+            "14 - FFVII Rebirth Cosmo Canyon Mako",
+            "15 - Studio Ghibli Sanctuary",
+            "16 - The Sleeping Titan Gundam Relic",
+            "17 - Front Mission 5: Wanzer Battle Relic",
+            "18 - Final Fantasy Resonance Citadel",
+            "19 - Front Mission 5: Strike Wanzer Vanguard",
+            "20 - Front Mission 3: Zenith Remaster",
+            "21 - Mobile Suit Gundam: RX-93 Nu Psycho-Frame",
+            "22 - Super Robot Taisen: OG Alteisen Revolver Stake",
         ];
         let name = realm_names.get((actual as usize).saturating_sub(1)).unwrap_or(&"Unknown Realm");
         println!("🌌 Switched Live Realm to [{}]: {}", actual, name);

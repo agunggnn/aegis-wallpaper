@@ -326,6 +326,112 @@
         "violet_astral_ribbon": { "frequency_harmonic": 1, "amp_bgr": [15.0, 3.0, 17.0] },
         "golden_zodiac_ring": { "frequency_harmonic": 2, "amp_bgr": [3.0, 13.0, 19.0] }
       }
+    },
+    {
+      "index": 19,
+      "id": "fm5_vanguard",
+      "name": "Front Mission 5: Scars of the War - Strike Wanzer Vanguard",
+      "source_image": "19_front_mission_5_wanzer_vanguard_4k.jpg",
+      "output_video": "19_front_mission_5_wanzer_vanguard_live.mp4",
+      "liveliness_profile": "gritty_military_storm",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "rain_puddle_ripples",
+        "num_cycles": 6,
+        "cycle_displacement_px": 8.0,
+        "velocity_px_per_sec": 6.0
+      },
+      "particles": {
+        "enabled": true,
+        "type": "heavy_tropical_rainfall",
+        "count": 160,
+        "fall_speed_range": [320.0, 480.0],
+        "drift_speed_range": [20.0, 45.0],
+        "radius_range": [0.8, 1.6],
+        "colors": [[220, 235, 255]]
+      },
+      "luminescence": {
+        "cockpit_visor": { "frequency_harmonic": 4, "amp_bgr": [28.0, 16.0, 4.0] },
+        "searchlights": { "frequency_harmonic": 2, "amp_bgr": [16.0, 14.0, 10.0] }
+      }
+    },
+    {
+      "index": 20,
+      "id": "fm3_remaster",
+      "name": "Front Mission 3: Remaster - Zenith Rev & Kirishima Type 97",
+      "source_image": "20_front_mission_3_wanzer_zenith_4k.jpg",
+      "output_video": "20_front_mission_3_wanzer_zenith_live.mp4",
+      "liveliness_profile": "tactical_port_dockyard",
+      "fluid_motion": {
+        "enabled": true,
+        "feature": "harbor_dock_advection",
+        "num_cycles": 6,
+        "cycle_displacement_px": 10.0,
+        "velocity_px_per_sec": 7.5
+      },
+      "particles": {
+        "enabled": true,
+        "type": "dockyard_mist_and_drizzle",
+        "count": 70,
+        "rise_speed_range": [40.0, 90.0],
+        "sway_amplitude_range": [10.0, 24.0],
+        "radius_range": [1.0, 2.0],
+        "colors": [[180, 220, 255]]
+      },
+      "luminescence": {
+        "heat_exhaust": { "frequency_harmonic": 3, "amp_bgr": [4.0, 14.0, 26.0] },
+        "port_floodlights": { "frequency_harmonic": 2, "amp_bgr": [12.0, 18.0, 24.0] }
+      }
+    },
+    {
+      "index": 21,
+      "id": "gundam_nu",
+      "name": "Mobile Suit Gundam: UC - RX-93 Nu Gundam Psycho-Frame Resonance",
+      "source_image": "21_gundam_nu_psychoframe_resonance_4k.jpg",
+      "output_video": "21_gundam_nu_psychoframe_resonance_live.mp4",
+      "liveliness_profile": "psycho_frame_deep_space",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "emerald_psychoframe_stardust",
+        "count": 75,
+        "drift_speed_range": [30.0, 75.0],
+        "sway_amplitude_range": [14.0, 30.0],
+        "radius_range": [1.2, 2.4],
+        "colors": [[120, 255, 140]]
+      },
+      "luminescence": {
+        "psycho_frame": { "frequency_harmonic": 2, "amp_bgr": [16.0, 32.0, 6.0] },
+        "vernier_thrusters": { "frequency_harmonic": 5, "amp_bgr": [24.0, 18.0, 10.0] },
+        "earth_dawn": { "frequency_harmonic": 1, "amp_bgr": [18.0, 12.0, 4.0] }
+      }
+    },
+    {
+      "index": 22,
+      "id": "srw_alteisen",
+      "name": "Super Robot Taisen: OG - Alteisen Revolver Stake Assault",
+      "source_image": "22_srw_og_alteisen_revolver_stake_4k.jpg",
+      "output_video": "22_srw_og_alteisen_revolver_stake_live.mp4",
+      "liveliness_profile": "subterranean_hangar_assault",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "industrial_welding_sparks",
+        "count": 55,
+        "rise_speed_range": [40.0, 85.0],
+        "sway_amplitude_range": [12.0, 28.0],
+        "radius_range": [1.2, 2.3],
+        "colors": [[120, 210, 255]]
+      },
+      "luminescence": {
+        "revolver_stake_spike": { "frequency_harmonic": 2, "amp_bgr": [4.0, 18.0, 34.0] },
+        "optical_sensor": { "frequency_harmonic": 4, "amp_bgr": [2.0, 6.0, 28.0] },
+        "hangar_hazard_lights": { "frequency_harmonic": 2, "amp_bgr": [6.0, 16.0, 24.0] }
+      }
     }
   ]
 }

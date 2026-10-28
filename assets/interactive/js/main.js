@@ -13,9 +13,20 @@ const scenes = [
     { id: "forge", image: "06_volcanic_obsidian_forge_4k.jpg", file: "06_volcanic_obsidian_forge_live.mp4", name: "OBSIDIAN VOLCANIC FORGE" },
     { id: "atlantis", image: "07_sunken_coral_atlantis_4k.jpg", file: "07_sunken_coral_atlantis_live.mp4", name: "SUNKEN CORAL ATLANTIS" },
     { id: "cyber", image: "08_cyber_aegis_megacity_4k.jpg", file: "08_cyber_aegis_megacity_live.mp4", name: "CYBER-AEGIS BASTION" },
-    { id: "valley", image: "09_autumn_dragon_valley_4k.jpg", file: "09_autumn_dragon_valley_live.mp4", name: "AUTUMN DRAGON VALLEY" },
+    { id: "valley", image: "09_autumn_dragon_valley_4k.jpg", file: "09_autumn_dragon_valley_v2_live.mp4", name: "AUTUMN DRAGON VALLEY" },
     { id: "starfall", image: "10_celestial_starfall_spire_4k.jpg", file: "10_celestial_starfall_spire_live.mp4", name: "STARFALL OBSERVATORY" },
-    { id: "dreamscript", image: "11_ethereal_dreamscript_4k.jpg", file: "11_ethereal_dreamscript_live.mp4", name: "ETHEREAL DREAMSCRIPT NEXUS" }
+    { id: "dreamscript", image: "11_ethereal_dreamscript_4k.jpg", file: "11_ethereal_dreamscript_live.mp4", name: "ETHEREAL DREAMSCRIPT NEXUS" },
+    { id: "titan_dunes", image: "12_celestial_dunes_titan_4k.jpg", file: "12_celestial_dunes_titan_live.mp4", name: "CELESTIAL TITAN DUNES" },
+    { id: "octopath", image: "13_octopath_hd2d_coastal_citadel_4k.jpg", file: "13_octopath_hd2d_coastal_citadel_live.mp4", name: "OCTOPATH HD-2D HARBOR CITADEL" },
+    { id: "ffvii", image: "14_ffvii_rebirth_cosmo_canyon_mako_4k.jpg", file: "14_ffvii_rebirth_cosmo_canyon_mako_live.mp4", name: "FFVII REBIRTH COSMO CANYON" },
+    { id: "ghibli", image: "15_ghibli_overgrown_sanctuary_4k.jpg", file: "15_ghibli_overgrown_sanctuary_live.mp4", name: "GHIBLI WATERMILL SANCTUARY" },
+    { id: "gundam", image: "16_gundam_relic_overgrown_meadow_4k.jpg", file: "16_gundam_relic_overgrown_meadow_live.mp4", name: "THE SLEEPING GUNDAM RELIC" },
+    { id: "wanzer", image: "17_front_mission_wanzer_relic_4k.jpg", file: "17_front_mission_wanzer_relic_live.mp4", name: "FRONT MISSION 5: WANZER RELIC" },
+    { id: "ff_resonance", image: "18_ff_resonance_crystal_citadel_4k.jpg", file: "18_ff_resonance_crystal_citadel_live.mp4", name: "FINAL FANTASY RESONANCE CITADEL" },
+    { id: "fm5_vanguard", image: "19_front_mission_5_wanzer_vanguard_4k.jpg", file: "19_front_mission_5_wanzer_vanguard_live.mp4", name: "FRONT MISSION 5: WANZER VANGUARD" },
+    { id: "fm3_remaster", image: "20_front_mission_3_wanzer_zenith_4k.jpg", file: "20_front_mission_3_wanzer_zenith_live.mp4", name: "FRONT MISSION 3: ZENITH REMASTER" },
+    { id: "gundam_nu", image: "21_gundam_nu_psychoframe_resonance_4k.jpg", file: "21_gundam_nu_psychoframe_resonance_live.mp4", name: "RX-93 NU GUNDAM PSYCHO-FRAME" },
+    { id: "srw_alteisen", image: "22_srw_og_alteisen_revolver_stake_4k.jpg", file: "22_srw_og_alteisen_revolver_stake_live.mp4", name: "SUPER ROBOT WARS OG: ALTEISEN" }
 ];
 
 let currentSceneIdx = 10;
@@ -46,8 +57,8 @@ function setScene(idx) {
 
     const scene = scenes[idx];
 
-    if (renderEngineMode === 0) {
-        // Mode 0: Pure 4K Lossless Canvas FX
+    if (renderEngineMode === 0 || !scene.file) {
+        // Mode 0 or Image-only: Pure 4K Lossless Canvas FX
         if (bgImage) {
             bgImage.src = scene.image;
             bgImage.classList.add('active');
@@ -68,7 +79,10 @@ function setScene(idx) {
                 bgVideo.load();
             }
             bgVideo.classList.add('active');
-            bgVideo.play().catch(() => {});
+            bgVideo.play().catch(() => {
+                if (bgImage) bgImage.classList.add('active');
+                bgVideo.classList.remove('active');
+            });
         }
     }
 

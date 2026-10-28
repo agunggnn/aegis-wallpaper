@@ -297,7 +297,7 @@ impl LivelyBridge {
     }
 
     pub fn set_realm(&self, realm_num: u32) -> Result<u32> {
-        let idx = (realm_num.saturating_sub(1)).min(9);
+        let idx = (realm_num.saturating_sub(1)).min(21);
         self.set_property(None, "activeScene", serde_json::json!(idx))?;
         Ok(idx + 1)
     }
@@ -308,7 +308,7 @@ impl LivelyBridge {
             .and_then(|v| v.get("value"))
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
-        let next = (cur + 1) % 10;
+        let next = (cur + 1) % 22;
         self.set_property(None, "activeScene", serde_json::json!(next))?;
         Ok((next as u32) + 1)
     }

@@ -705,74 +705,47 @@ def render_08_cyber(cq=15):
 # REALM 09: Autumn Dragon Valley (Clean Inpaint + Rushing Falls + Maple Swirl)
 # ==============================================================================
 def render_09_valley(cq=15):
-    print("\n[09/11] Rendering Realm 09: Autumn Dragon Valley...", flush=True)
+    print("\n[09/16] Rendering Realm 09: Autumn Dragon Valley (Accurate Waterfall & Lake Flow)...", flush=True)
     t0 = time.time()
     img = load_master("09_autumn_dragon_valley_4k.jpg")
-    out_path = os.path.join(OUT_DIR, "09_autumn_dragon_valley_live.mp4")
+    out_path = os.path.join(OUT_DIR, "09_autumn_dragon_valley_v2_live.mp4")
+    img_f = img.astype(np.float32)
+    b_chan, g_chan, r_chan = cv2.split(img_f)
 
-    leaves_to_inpaint = [
-        (int(W * 0.306), int(H * 0.108), 35),
-        (int(W * 0.354), int(H * 0.258), 30),
-        (755, 1156, 55),
-        (int(W * 0.503), int(H * 0.680), 25),
-        (int(W * 0.620), int(H * 0.320), 28),
-        (int(W * 0.665), int(H * 0.375), 25),
-        (int(W * 0.621), int(H * 0.428), 28),
-        (int(W * 0.605), int(H * 0.722), 25),
-        (int(W * 0.623), int(H * 0.762), 28),
-        (int(W * 0.697), int(H * 0.648), 22),
-        (int(W * 0.800), int(H * 0.356), 22),
-        (int(W * 0.210), int(H * 0.495), 22),
-        (int(W * 0.098), int(H * 0.642), 28),
-        (int(W * 0.315), int(H * 0.745), 22),
-        (int(W * 0.370), int(H * 0.840), 22),
-    ]
-    inpaint_mask = np.zeros((H, W), dtype=np.uint8)
-    b_c, g_c, r_c = cv2.split(img.astype(np.float32))
-    for cx, cy, rad in leaves_to_inpaint:
-        y1, y2 = max(0, cy - rad), min(H, cy + rad)
-        x1, x2 = max(0, cx - rad), min(W, cx + rad)
-        crop_r, crop_b = r_c[y1:y2, x1:x2], b_c[y1:y2, x1:x2]
-        is_l = (crop_r > crop_b * 1.15) & (crop_r > 65)
-        yy, xx = np.mgrid[y1:y2, x1:x2]
-        inpaint_mask[y1:y2, x1:x2][((xx - cx) ** 2 + (yy - cy) ** 2 <= rad ** 2) & is_l] = 255
-
-    leaf_crop = img[1115:1195, 715:795].astype(np.float32)
-    b_lc, g_lc, r_lc = cv2.split(leaf_crop)
-    inpaint_mask[1115:1195, 715:795][(r_lc > 130) & (g_lc > 80) & (b_lc < 100)] = 255
-    inpaint_mask = cv2.dilate(inpaint_mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
-    base_img = cv2.inpaint(img, inpaint_mask, 5, cv2.INPAINT_TELEA)
-    base_f = base_img.astype(np.float32)
-
-    b_chan, g_chan, r_chan = cv2.split(base_f)
-    is_upper_fall = (NX >= 0.34) & (NX <= 0.45) & (NY >= 0.32) & (NY <= 0.52) & (b_chan > 115) & (b_chan > 0.80 * r_chan)
-    is_lower_fall = (NX >= 0.37) & (NX <= 0.51) & (NY >= 0.52) & (NY <= 0.74) & (b_chan > 115) & (b_chan > 0.80 * r_chan)
+    # 1. Cascading Waterfalls & Stream
+    is_upper_fall = (NX >= 0.35) & (NX <= 0.44) & (NY >= 0.32) & (NY <= 0.52) & (b_chan > 115) & (b_chan > 0.80 * r_chan)
+    is_lower_fall = (NX >= 0.38) & (NX <= 0.50) & (NY >= 0.52) & (NY <= 0.74) & (b_chan > 115) & (b_chan > 0.80 * r_chan)
     is_stream = (NX >= 0.51) & (NX <= 0.64) & (NY >= 0.56) & (NY <= 0.75) & (b_chan > 110) & (b_chan > 0.78 * r_chan)
     falls_raw = (is_upper_fall | is_lower_fall | is_stream).astype(np.uint8) * 255
     falls_clean = cv2.morphologyEx(falls_raw, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 7)))
     falls_mask = cv2.GaussianBlur(falls_clean.astype(np.float32) / 255.0, (7, 11), 0)
 
+    # 2. Emerald Lake Pool (Bottom Center)
+    is_lake = (NY >= 0.68) & (NX >= 0.15) & (NX <= 0.68) & (g_chan > 55) & (b_chan > 50) & (g_chan >= r_chan * 0.90) & (r_chan < 115)
+    lake_raw = is_lake.astype(np.uint8) * 255
+    lake_clean = cv2.morphologyEx(lake_raw, cv2.MORPH_CLOSE, lake_kernel := cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    lake_mask = cv2.GaussianBlur(lake_clean.astype(np.float32) / 255.0, (15, 15), 0)
+
+    # 3. Plunge Pool Rising Mist
     plunge_dist_sq = ((NX - 0.45) ** 2) / (0.09 ** 2) + ((NY - 0.71) ** 2) / (0.045 ** 2)
     mist_mask = np.clip(np.exp(-plunge_dist_sq).astype(np.float32), 0.0, 1.0)
+
+    # 4. Valley Sunbeam Godrays
     godray_dist_sq = ((NX - 0.80) ** 2) / (0.18 ** 2) + ((NY - 0.22) ** 2) / (0.15 ** 2)
     godray_mask = np.clip(np.exp(-godray_dist_sq).astype(np.float32), 0.0, 1.0)
 
+    # 5. Lantern Lights
     lantern_mask = np.zeros((H, W), dtype=np.float32)
     for lx, ly, rad in [(int(0.730 * W), int(0.628 * H), 32), (int(0.853 * W), int(0.625 * H), 32), (int(0.796 * W), int(0.780 * H), 26)]:
         l_dist_sq = ((X_GRID - lx) ** 2 + (Y_GRID - ly) ** 2) / (rad ** 2)
         lantern_mask += np.clip(np.exp(-l_dist_sq), 0.0, 1.0)
     lantern_mask = np.clip(lantern_mask, 0.0, 1.0)
 
-    glow_1x = make_glow_bgr(mist_mask, 10.0, 10.0, 10.0) + make_glow_bgr(godray_mask, 2.0, 5.0, 7.0)
-    glow_2x = make_glow_bgr(lantern_mask, 4.0, 12.0, 18.0)
+    glow_mist = make_glow_bgr(mist_mask, 7.0, 8.0, 8.0)
+    glow_godray = make_glow_bgr(godray_mask, 2.0, 6.0, 9.0)
+    glow_lantern = make_glow_bgr(lantern_mask, 3.0, 10.0, 16.0)
 
-    fy0, fy1 = int(0.30 * H), int(0.77 * H)
-    fx0, fx1 = int(0.32 * W), int(0.66 * W)
-    f_crop = base_img[fy0:fy1, fx0:fx1]
-    fm_crop = falls_mask[fy0:fy1, fx0:fx1]
-    xg_crop, yg_crop = np.meshgrid(np.arange(fx1 - fx0, dtype=np.float32), np.arange(fy1 - fy0, dtype=np.float32))
-    ny_crop = NY[fy0:fy1, fx0:fx1]
-
+    # 6. Serene Momiji Leaves (16 drifting leaves)
     np.random.seed(909)
     leaf_sprites = []
     for s in [14, 16, 18, 20]:
@@ -789,43 +762,51 @@ def render_09_valley(cq=15):
 
     leaf_colors = [(25, 40, 215), (20, 130, 245), (30, 85, 220), (15, 110, 235)]
     leaves = []
-    for k in range(36):
+    for k in range(16):
         leaves.append({
-            "x_start": np.random.uniform(0.10, 0.86) * W,
-            "y_start": np.random.uniform(0.12, 0.76) * H,
-            "fall_dist": np.random.uniform(50.0, 95.0),
-            "sway_amp": np.random.uniform(18.0, 32.0),
+            "x_start": np.random.uniform(0.12, 0.84) * W,
+            "y_start": np.random.uniform(0.15, 0.72) * H,
+            "fall_dist": np.random.uniform(32.0, 50.0),
+            "sway_amp": np.random.uniform(14.0, 24.0),
             "phase_offset": np.random.uniform(0.0, 1.0),
             "base_angle": np.random.uniform(0.0, 360.0),
-            "rot_amp": np.random.uniform(20.0, 45.0),
+            "rot_amp": np.random.uniform(15.0, 30.0),
             "color": leaf_colors[k % len(leaf_colors)],
             "sprite": leaf_sprites[k % len(leaf_sprites)],
-            "max_alpha": np.random.uniform(0.72, 0.90),
+            "max_alpha": np.random.uniform(0.70, 0.88),
         })
 
     proc = open_nvenc(out_path, cq=cq)
-    num_cycles = 7
-    cycle_h = 22.0
 
     for i in range(NUM_FRAMES):
         prog = i / float(NUM_FRAMES)
         phase = 2.0 * np.pi * prog
-        t1 = (prog * num_cycles) % 1.0
-        t2 = (t1 + 0.5) % 1.0
-        w_blend = float(np.sin(t1 * np.pi) ** 2.0)
 
-        p1 = float(np.sin(phase) * 0.5 + 0.5)
-        p2 = float(np.sin(phase * 2.0) * 0.5 + 0.5)
-        frame = base_f + p1 * glow_1x + p2 * glow_2x
+        p_mist = float(np.sin(phase) * 0.5 + 0.5)
+        p_godray = float(np.sin(phase) * 0.5 + 0.5)
+        p_lantern = float(np.sin(phase * 2.0) * 0.5 + 0.5)
+        base_lit = img_f + p_mist * glow_mist + p_godray * glow_godray + p_lantern * glow_lantern
 
-        dy1 = (t1 - 0.5) * cycle_h * fm_crop
-        dy2 = (t2 - 0.5) * cycle_h * fm_crop
-        f1 = cv2.remap(f_crop, xg_crop, yg_crop - dy1, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
-        f2 = cv2.remap(f_crop, xg_crop, yg_crop - dy2, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT).astype(np.float32)
-        wf_frame = f1 * w_blend + f2 * (1.0 - w_blend)
-        sparkle = ((np.sin(ny_crop * 30.0 - phase * 2.0) * 0.5 + 0.5) ** 1.5) * fm_crop * 16.0
-        wf_frame += sparkle[:, :, np.newaxis]
-        frame[fy0:fy1, fx0:fx1] = wf_frame
+        # Accurate Water Motion:
+        fall_disp_y = np.sin(NY * 24.0 - phase * 3.0) * 1.5 * falls_mask
+        lake_disp_x = np.cos(NX * 8.0 + phase) * 0.5 * lake_mask
+        lake_disp_y = np.sin(NY * 6.0 + phase) * 0.4 * lake_mask
+
+        remap_x = np.clip(X_GRID + lake_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + fall_disp_y + lake_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_lit, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        # Waterfall crystalline sparkle
+        fall_sparkle = ((np.sin(NY * 28.0 - phase * 3.0) * 0.5 + 0.5) ** 1.5) * falls_mask * 14.0
+        frame[:, :, 0] += fall_sparkle * 1.20
+        frame[:, :, 1] += fall_sparkle * 1.10
+        frame[:, :, 2] += fall_sparkle * 0.90
+
+        # Emerald Lake sheen & caustics
+        lake_sheen = ((np.sin(NX * 12.0 + NY * 8.0 + phase * 2.0) * 0.5 + 0.5) * lake_mask * 8.0)
+        frame[:, :, 0] += lake_sheen * 0.8
+        frame[:, :, 1] += lake_sheen * 1.2
+        frame[:, :, 2] += lake_sheen * 0.6
 
         frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
 
@@ -860,8 +841,6 @@ def render_09_valley(cq=15):
     return out_path
 
 
-# ==============================================================================
-# REALM 10: Celestial Starfall Observatory (Solid Mountains + Cosmic Bolides)
 # ==============================================================================
 def render_10_starfall(cq=15):
     print("\n[10/11] Rendering Realm 10: Celestial Starfall Observatory...", flush=True)
@@ -1083,6 +1062,804 @@ def render_11_dreamscript(cq=14):
     return out_path
 
 
+
+# ==============================================================================
+# REALM 12: Celestial Titan Dunes (Forgotten Colossus & Glowing Oasis)
+# ==============================================================================
+def render_12_titan_dunes(cq=15):
+    print("\n[12/16] Rendering Realm 12: Celestial Titan Dunes...", flush=True)
+    t0 = time.time()
+    img = load_master("12_celestial_dunes_titan_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "12_celestial_dunes_titan_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Turquoise Oasis Pool
+    in_pool_box = (NY >= 0.55) & (NY <= 0.88) & (NX >= 0.20) & (NX <= 0.80)
+    is_pool = in_pool_box & (b > 60) & (g > r * 0.95) & (b > r * 1.05)
+    pool_u8 = cv2.morphologyEx(is_pool.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    pool_mask = cv2.GaussianBlur(pool_u8.astype(np.float32) / 255.0, (15, 15), 0)
+
+    # 2. Glowing Titan Runes (Hieroglyphics on stone colossus & obelisks)
+    is_runes = (r > 150) & (g > 130) & (b < 100) & (NY >= 0.15) & (NY <= 0.65)
+    rune_mask = cv2.GaussianBlur(is_runes.astype(np.float32), (7, 7), 0)
+    rune_glow = make_glow_bgr(rune_mask, 3.0, 16.0, 24.0)
+
+    # 3. Celestial Aurora & Twin Moons Sky
+    is_sky = (NY <= 0.40) & ((b > 90) | (r > 120))
+    sky_mask = cv2.GaussianBlur(is_sky.astype(np.float32), (31, 31), 0)
+    sky_glow = make_glow_bgr(sky_mask, 8.0, 4.0, 7.0)
+
+    # 4. Floating Stardust Particles
+    np.random.seed(1212)
+    n_dust = 60
+    dx0 = np.random.uniform(0.15, 0.85, n_dust) * W
+    dy0 = np.random.uniform(0.35, 0.88, n_dust) * H
+    d_rise = np.random.uniform(40.0, 85.0, n_dust)
+    d_sway = np.random.uniform(10.0, 22.0, n_dust)
+    d_off = np.random.uniform(0.0, 1.0, n_dust)
+    d_rad = np.random.uniform(1.3, 2.4, n_dust)
+    d_alpha = np.random.uniform(0.45, 0.85, n_dust)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_rune = float(np.sin(phase * 2.0) * 0.5 + 0.5)
+        p_sky = float(np.sin(phase) * 0.5 + 0.5)
+        base_frame = img_f + p_rune * rune_glow + p_sky * sky_glow
+
+        lake_disp_x = np.sin(NX * 12.0 + phase * 2.0) * 0.5 * pool_mask
+        lake_disp_y = np.cos(NY * 8.0 + phase * 2.0) * 0.4 * pool_mask
+        remap_x = np.clip(X_GRID + lake_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + lake_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        caust = ((np.sin(NX * 18.0 + NY * 12.0 - phase * 2.0) * 0.5 + 0.5) * pool_mask * 12.0)
+        frame[:, :, 0] += caust * 1.25
+        frame[:, :, 1] += caust * 1.15
+        frame[:, :, 2] += caust * 0.70
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + d_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * d_alpha
+        px = dx0 + np.sin(p_prog * 2.0 * np.pi) * d_sway
+        py = dy0 - p_prog * d_rise
+        draw_soft_particles(frame_u8, px[:30], py[:30], d_rad[:30], (100, 220, 255), p_a[:30])
+        draw_soft_particles(frame_u8, px[30:], py[30:], d_rad[30:], (255, 220, 130), p_a[30:])
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 12", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 13: Octopath Traveler HD-2D Coastal Citadel
+# ==============================================================================
+def render_13_octopath(cq=15):
+    print("\n[13/16] Rendering Realm 13: Octopath HD-2D Harbor Citadel...", flush=True)
+    t0 = time.time()
+    img = load_master("13_octopath_hd2d_coastal_citadel_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "13_octopath_hd2d_coastal_citadel_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Sapphire Harbor Ocean Waves
+    is_sea = (NY >= 0.65) & (b > 65) & (b > r * 1.08)
+    sea_u8 = cv2.morphologyEx(is_sea.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    sea_mask = cv2.GaussianBlur(sea_u8.astype(np.float32) / 255.0, (15, 15), 0)
+
+    # 2. Amber Gas Lamps & Paper Lanterns
+    is_lamps = (r > 175) & (g > 125) & (b < 95)
+    lamp_mask = cv2.GaussianBlur(is_lamps.astype(np.float32), (9, 9), 0)
+    lamp_glow = make_glow_bgr(lamp_mask, 3.0, 14.0, 20.0)
+
+    # 3. Stained Glass Windows & Library Glow
+    is_windows = (r > 140) & (g > 110) & (b < 90) & (NY >= 0.25) & (NY <= 0.55) & (NX >= 0.35) & (NX <= 0.65)
+    win_mask = cv2.GaussianBlur(is_windows.astype(np.float32), (13, 13), 0)
+    win_glow = make_glow_bgr(win_mask, 2.0, 9.0, 15.0)
+
+    # 4. HD-2D Floating Luminous Motes (Golden essence)
+    np.random.seed(1313)
+    n_motes = 50
+    mx0 = np.random.uniform(0.10, 0.90, n_motes) * W
+    my0 = np.random.uniform(0.25, 0.85, n_motes) * H
+    m_rise = np.random.uniform(35.0, 75.0, n_motes)
+    m_sway = np.random.uniform(12.0, 25.0, n_motes)
+    m_off = np.random.uniform(0.0, 1.0, n_motes)
+    m_rad = np.random.uniform(1.2, 2.3, n_motes)
+    m_alpha = np.random.uniform(0.40, 0.85, n_motes)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_lamp = float((np.sin(phase * 3.0) * 0.3 + np.sin(phase * 4.0) * 0.2 + 0.5))
+        p_win = float(np.sin(phase * 2.0) * 0.5 + 0.5)
+        base_frame = img_f + p_lamp * lamp_glow + p_win * win_glow
+
+        sea_disp_x = np.sin(NX * 8.0 - phase * 2.0) * 0.7 * sea_mask
+        sea_disp_y = np.cos(NY * 10.0 + phase) * 0.5 * sea_mask
+        remap_x = np.clip(X_GRID + sea_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + sea_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        caust = ((np.sin(NX * 14.0 - phase * 2.0 + NY * 8.0) * 0.5 + 0.5) * sea_mask * 10.0)
+        frame[:, :, 0] += caust * 1.30
+        frame[:, :, 1] += caust * 1.10
+        frame[:, :, 2] += caust * 0.75
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + m_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * m_alpha
+        px = mx0 + np.sin(p_prog * 2.0 * np.pi) * m_sway
+        py = my0 - p_prog * m_rise
+        draw_soft_particles(frame_u8, px, py, m_rad, (255, 215, 120), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 13", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 14: Final Fantasy VII Rebirth Cosmo Canyon & Mako Veil
+# ==============================================================================
+def render_14_ffvii_cosmo(cq=15):
+    print("\n[14/16] Rendering Realm 14: FFVII Rebirth Cosmo Canyon...", flush=True)
+    t0 = time.time()
+    img = load_master("14_ffvii_rebirth_cosmo_canyon_mako_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "14_ffvii_rebirth_cosmo_canyon_mako_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Emerald Mako / Lifestream Veil Mask
+    is_mako = (g > 105) & (g > r * 1.12) & (g > b * 0.92)
+    mako_u8 = cv2.morphologyEx(is_mako.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+    mako_mask = cv2.GaussianBlur(mako_u8.astype(np.float32) / 255.0, (13, 13), 0)
+    mako_glow = make_glow_bgr(mako_mask, 16.0, 26.0, 4.0)
+
+    # 2. Ritual Torches & Braziers
+    is_torches = (r > 185) & (g > 95) & (b < 80)
+    torch_mask = cv2.GaussianBlur(is_torches.astype(np.float32), (9, 9), 0)
+    torch_glow = make_glow_bgr(torch_mask, 2.0, 12.0, 24.0)
+
+    # 3. Rising Fiery Embers & Mako Wisps
+    np.random.seed(1414)
+    n_embers = 65
+    ex0 = np.random.uniform(0.15, 0.85, n_embers) * W
+    ey0 = np.random.uniform(0.40, 0.92, n_embers) * H
+    e_rise = np.random.uniform(60.0, 140.0, n_embers)
+    e_sway = np.random.uniform(14.0, 28.0, n_embers)
+    e_off = np.random.uniform(0.0, 1.0, n_embers)
+    e_rad = np.random.uniform(1.2, 2.2, n_embers)
+    e_alpha = np.random.uniform(0.50, 0.90, n_embers)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_mako = float(np.sin(phase * 2.0) * 0.5 + 0.5)
+        p_torch = float(np.sin(phase * 4.0) * 0.3 + np.cos(phase * 2.0) * 0.2 + 0.5)
+        base_frame = img_f + p_mako * mako_glow + p_torch * torch_glow
+
+        mako_disp_y = -np.sin(NY * 16.0 + phase * 3.0) * 1.2 * mako_mask
+        mako_disp_x = np.cos(NX * 10.0 + phase * 2.0) * 0.6 * mako_mask
+        remap_x = np.clip(X_GRID + mako_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + mako_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        mako_shimmer = ((np.sin(NY * 24.0 + phase * 3.0) * 0.5 + 0.5) * mako_mask * 15.0)
+        frame[:, :, 0] += mako_shimmer * 0.9
+        frame[:, :, 1] += mako_shimmer * 1.4
+        frame[:, :, 2] += mako_shimmer * 0.2
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + e_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * e_alpha
+        px = ex0 + np.sin(p_prog * 2.0 * np.pi) * e_sway
+        py = ey0 - p_prog * e_rise
+        draw_soft_particles(frame_u8, px[:35], py[:35], e_rad[:35], (40, 160, 255), p_a[:35])
+        draw_soft_particles(frame_u8, px[35:], py[35:], e_rad[35:], (120, 255, 140), p_a[35:])
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 14", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 15: Studio Ghibli Overgrown Watermill Sanctuary
+# ==============================================================================
+def render_15_ghibli_watermill(cq=15):
+    print("\n[15/16] Rendering Realm 15: Ghibli Watermill Sanctuary...", flush=True)
+    t0 = time.time()
+    img = load_master("15_ghibli_overgrown_sanctuary_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "15_ghibli_overgrown_sanctuary_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Winding Brook Stream Mask
+    is_stream = (NY >= 0.52) & (b > 70) & (b >= r * 0.92) & (g >= r * 0.92) & (NX >= 0.20) & (NX <= 0.85)
+    stream_u8 = cv2.morphologyEx(is_stream.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    stream_mask = cv2.GaussianBlur(stream_u8.astype(np.float32) / 255.0, (11, 11), 0)
+
+    # 2. Meadow & Wildflower Grass
+    is_meadow = (NY >= 0.48) & (g > r * 1.1) & (g > b * 1.1) & (~is_stream)
+    meadow_mask = cv2.GaussianBlur(is_meadow.astype(np.float32), (21, 21), 0)
+
+    # 3. Summer Godrays through Tree
+    is_rays = (NY <= 0.45) & (NX <= 0.55) & (r > 160) & (g > 160)
+    ray_mask = cv2.GaussianBlur(is_rays.astype(np.float32), (31, 31), 0)
+    ray_glow = make_glow_bgr(ray_mask, 3.0, 9.0, 14.0)
+
+    # 4. Floating Dandelion Fluff & Pollen
+    np.random.seed(1515)
+    n_seeds = 45
+    sx0 = np.random.uniform(0.10, 0.90, n_seeds) * W
+    sy0 = np.random.uniform(0.20, 0.85, n_seeds) * H
+    s_drift = np.random.uniform(30.0, 70.0, n_seeds)
+    s_sway = np.random.uniform(15.0, 30.0, n_seeds)
+    s_off = np.random.uniform(0.0, 1.0, n_seeds)
+    s_rad = np.random.uniform(1.2, 2.0, n_seeds)
+    s_alpha = np.random.uniform(0.40, 0.80, n_seeds)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_ray = float(np.sin(phase) * 0.5 + 0.5)
+        base_frame = img_f + p_ray * ray_glow
+
+        stream_disp_y = np.sin(NY * 18.0 - phase * 3.0) * 1.2 * stream_mask
+        stream_disp_x = np.cos(NX * 12.0 + phase * 2.0) * 0.6 * stream_mask
+        meadow_disp_x = np.sin(NX * 8.0 + phase * 2.0) * 0.5 * meadow_mask
+
+        remap_x = np.clip(X_GRID + stream_disp_x + meadow_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + stream_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        stream_glint = ((np.sin(NY * 22.0 - phase * 3.0) * 0.5 + 0.5) * stream_mask * 11.0)
+        frame[:, :, 0] += stream_glint * 1.25
+        frame[:, :, 1] += stream_glint * 1.15
+        frame[:, :, 2] += stream_glint * 0.85
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + s_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * s_alpha
+        px = sx0 + np.sin(p_prog * 2.0 * np.pi) * s_sway + p_prog * 25.0
+        py = sy0 - p_prog * s_drift
+        draw_soft_particles(frame_u8, px, py, s_rad, (240, 250, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 15", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 16: The Sleeping Titan (Fallen Gundam Relic Overgrown by Nature)
+# ==============================================================================
+def render_16_gundam_relic(cq=15):
+    print("\n[16/16] Rendering Realm 16: The Sleeping Titan Gundam Relic...", flush=True)
+    t0 = time.time()
+    img = load_master("16_gundam_relic_overgrown_meadow_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "16_gundam_relic_overgrown_meadow_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Cliffside Waterfall Cascade (Behind Gundam's shoulder)
+    is_waterfall = (NX <= 0.42) & (NY >= 0.20) & (NY <= 0.80) & (b > 85) & (b >= r * 0.88)
+    wf_u8 = cv2.morphologyEx(is_waterfall.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 7)))
+    wf_mask = cv2.GaussianBlur(wf_u8.astype(np.float32) / 255.0, (7, 11), 0)
+
+    # 2. Reflective Lily Pond (Base)
+    is_pool = (NY >= 0.70) & (NX <= 0.55) & (b > 65) & (g > 65)
+    pool_u8 = cv2.morphologyEx(is_pool.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    pool_mask = cv2.GaussianBlur(pool_u8.astype(np.float32) / 255.0, (15, 15), 0)
+
+    # 3. Morning Sunbeams / Crepuscular Godrays
+    is_rays = (NY <= 0.50) & (r > 150) & (g > 150)
+    ray_mask = cv2.GaussianBlur(is_rays.astype(np.float32), (31, 31), 0)
+    ray_glow = make_glow_bgr(ray_mask, 3.0, 9.0, 15.0)
+
+    # 4. Valley Floating Pollen / Dandelion Motes
+    np.random.seed(1616)
+    n_motes = 50
+    mx0 = np.random.uniform(0.10, 0.90, n_motes) * W
+    my0 = np.random.uniform(0.20, 0.88, n_motes) * H
+    m_drift = np.random.uniform(35.0, 80.0, n_motes)
+    m_sway = np.random.uniform(12.0, 24.0, n_motes)
+    m_off = np.random.uniform(0.0, 1.0, n_motes)
+    m_rad = np.random.uniform(1.2, 2.2, n_motes)
+    m_alpha = np.random.uniform(0.40, 0.85, n_motes)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_ray = float(np.sin(phase) * 0.5 + 0.5)
+        base_frame = img_f + p_ray * ray_glow
+
+        wf_disp_y = np.sin(NY * 24.0 - phase * 3.0) * 1.5 * wf_mask
+        pool_disp_x = np.sin(NX * 10.0 + phase) * 0.5 * pool_mask
+        pool_disp_y = np.cos(NY * 8.0 + phase) * 0.4 * pool_mask
+
+        remap_x = np.clip(X_GRID + pool_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + wf_disp_y + pool_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        wf_sparkle = ((np.sin(NY * 28.0 - phase * 3.0) * 0.5 + 0.5) ** 1.5) * wf_mask * 13.0
+        frame[:, :, 0] += wf_sparkle * 1.25
+        frame[:, :, 1] += wf_sparkle * 1.15
+        frame[:, :, 2] += wf_sparkle * 0.90
+
+        pool_sheen = ((np.sin(NX * 12.0 + phase * 2.0) * 0.5 + 0.5) * pool_mask * 8.0)
+        frame[:, :, 0] += pool_sheen * 0.9
+        frame[:, :, 1] += pool_sheen * 1.2
+        frame[:, :, 2] += pool_sheen * 0.7
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + m_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * m_alpha
+        px = mx0 + np.sin(p_prog * 2.0 * np.pi) * m_sway
+        py = my0 - p_prog * m_drift
+        draw_soft_particles(frame_u8, px, py, m_rad, (220, 245, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 16", t0, out_path)
+    return out_path
+
+
+
+def render_17_wanzer_relic(cq=15):
+    print("\n[17/18] Rendering Realm 17: Front Mission 5: Wanzer Battle Relic...", flush=True)
+    t0 = time.time()
+    img = load_master("17_front_mission_wanzer_relic_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "17_front_mission_wanzer_relic_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Cockpit HUD screen & interior blue ambient glow
+    is_cockpit = (NX >= 0.25) & (NX <= 0.58) & (NY >= 0.18) & (NY <= 0.48) & (b > 130) & (b > r * 1.25)
+    cockpit_mask = cv2.GaussianBlur(is_cockpit.astype(np.float32), (15, 15), 0)
+    glow_cockpit = make_glow_bgr(cockpit_mask, 28.0, 18.0, 4.0)
+
+    # 2. Joint Short Circuit Sparks & Electric Arcs
+    is_sparks = (NX >= 0.28) & (NX <= 0.60) & (NY >= 0.28) & (NY <= 0.50) & (((r > 180) & (g > 130) & (b < 140)) | ((b > 220) & (g > 210)))
+    sparks_mask = cv2.GaussianBlur(is_sparks.astype(np.float32), (7, 7), 0)
+    glow_sparks = make_glow_bgr(sparks_mask, 35.0, 30.0, 24.0)
+    glow_sparks_ambient = make_glow_bgr(cv2.GaussianBlur(sparks_mask, (25, 25), 0), 12.0, 10.0, 6.0)
+
+    # 3. Ground Puddles (Remapping & Specular Gleam)
+    is_puddle = (NY >= 0.66) & (NX >= 0.10) & (NX <= 0.90) & (b > 45) & (b >= r * 0.9)
+    puddle_mask = cv2.GaussianBlur(is_puddle.astype(np.float32), (21, 21), 0)
+
+    # 4. Drifting Heat / Electrical Sparks Motes
+    np.random.seed(1717)
+    n_sparks = 36
+    sx0 = np.random.uniform(0.30, 0.58, n_sparks) * W
+    sy0 = np.random.uniform(0.30, 0.50, n_sparks) * H
+    s_drift = np.random.uniform(30.0, 65.0, n_sparks)
+    s_sway = np.random.uniform(10.0, 25.0, n_sparks)
+    s_off = np.random.uniform(0.0, 1.0, n_sparks)
+    s_rad = np.random.uniform(1.0, 2.2, n_sparks)
+    s_alpha = np.random.uniform(0.50, 0.95, n_sparks)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_cockpit = float(np.sin(phase * 4.0) * 0.15 + np.sin(phase * 8.0) * 0.05 + 1.0)
+
+        # Stochastic harmonic spark bursts
+        spark_spike1 = float(max(0.0, np.sin(phase * 4.0)) ** 12.0) * 1.6
+        spark_spike2 = float(max(0.0, np.sin(phase * 6.0 + 1.5)) ** 14.0) * 1.3
+        spark_spike3 = float(max(0.0, np.cos(phase * 8.0 + 3.0)) ** 16.0) * 2.0
+        spark_intensity = spark_spike1 + spark_spike2 + spark_spike3
+
+        base_frame = img_f + (p_cockpit * glow_cockpit) + (spark_intensity * (glow_sparks + glow_sparks_ambient))
+
+        puddle_disp_x = np.sin(NX * 16.0 + phase * 2.0) * 0.4 * puddle_mask
+        puddle_disp_y = np.cos(NY * 12.0 + phase * 2.0) * 0.3 * puddle_mask
+
+        remap_x = np.clip(X_GRID + puddle_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + puddle_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        puddle_gleam = ((np.sin(NX * 20.0 + NY * 14.0 + phase * 2.0) * 0.5 + 0.5) * puddle_mask * 7.0)
+        frame[:, :, 0] += puddle_gleam * 1.1
+        frame[:, :, 1] += puddle_gleam * 0.9
+        frame[:, :, 2] += puddle_gleam * 0.6
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + s_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * s_alpha
+        px = sx0 + np.sin(p_prog * 2.0 * np.pi) * s_sway
+        py = sy0 - p_prog * s_drift
+        draw_soft_particles(frame_u8, px, py, s_rad, (160, 230, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 17", t0, out_path)
+    return out_path
+
+
+def render_18_ff_resonance(cq=15):
+    print("\n[18/18] Rendering Realm 18: Final Fantasy Resonance Crystal Citadel...", flush=True)
+    t0 = time.time()
+    img = load_master("18_ff_resonance_crystal_citadel_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "18_ff_resonance_crystal_citadel_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Colossal Resonance Mothercrystal
+    is_crystal = (NX >= 0.38) & (NX <= 0.62) & (NY >= 0.12) & (NY <= 0.72) & (b > 160) & (b > r * 1.15)
+    crystal_u8 = cv2.morphologyEx(is_crystal.astype(np.uint8) * 255, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7)))
+    crystal_mask = cv2.GaussianBlur(crystal_u8.astype(np.float32) / 255.0, (15, 15), 0)
+    glow_crystal = make_glow_bgr(crystal_mask, 24.0, 16.0, 6.0)
+
+    # 2. Citadel Street Lanterns / Torches
+    is_lantern = (r > 190) & (g > 130) & (b < 110) & (NY >= 0.50)
+    lantern_mask = cv2.GaussianBlur(is_lantern.astype(np.float32), (9, 9), 0)
+    glow_lantern = make_glow_bgr(lantern_mask, 4.0, 12.0, 20.0)
+
+    # 3. Airship Engine & Sky
+    is_airship = (NX >= 0.80) & (NY >= 0.18) & (NY <= 0.32) & (r > 140)
+    airship_mask = cv2.GaussianBlur(is_airship.astype(np.float32), (11, 11), 0)
+    glow_airship = make_glow_bgr(airship_mask, 3.0, 10.0, 16.0)
+
+    # 4. Cobblestone Plaza Mana Ripples (Bottom)
+    is_plaza_refl = (NY >= 0.68) & (NX >= 0.20) & (NX <= 0.80) & (b > 70)
+    plaza_mask = cv2.GaussianBlur(is_plaza_refl.astype(np.float32), (21, 21), 0)
+
+    # 5. Rising Lapis Mana Motes & Vision Sparkles
+    np.random.seed(1818)
+    n_mana = 45
+    mx0 = np.random.uniform(0.35, 0.65, n_mana) * W
+    my0 = np.random.uniform(0.30, 0.78, n_mana) * H
+    m_drift = np.random.uniform(35.0, 80.0, n_mana)
+    m_sway = np.random.uniform(12.0, 26.0, n_mana)
+    m_off = np.random.uniform(0.0, 1.0, n_mana)
+    m_rad = np.random.uniform(1.2, 2.5, n_mana)
+    m_alpha = np.random.uniform(0.40, 0.90, n_mana)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_crystal = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.1 + 0.3)
+        p_lantern = float(np.sin(phase * 4.0) * 0.08 + np.cos(phase * 9.0) * 0.05 + 1.0)
+        p_airship = float(np.sin(phase * 3.0) * 0.2 + 1.0)
+
+        base_frame = img_f + (p_crystal * glow_crystal) + (p_lantern * glow_lantern) + (p_airship * glow_airship)
+
+        plaza_disp_x = np.sin(NX * 12.0 + phase) * 0.4 * plaza_mask
+        plaza_disp_y = np.cos(NY * 10.0 + phase) * 0.3 * plaza_mask
+
+        remap_x = np.clip(X_GRID + plaza_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + plaza_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        cryst_shimmer = ((np.sin(NX * 28.0 + NY * 16.0 + phase * 3.0) * 0.5 + 0.5) ** 1.8) * crystal_mask * 14.0
+        frame[:, :, 0] += cryst_shimmer * 1.2
+        frame[:, :, 1] += cryst_shimmer * 1.0
+        frame[:, :, 2] += cryst_shimmer * 0.4
+
+        plaza_gleam = ((np.sin(NX * 18.0 + NY * 12.0 + phase * 2.0) * 0.5 + 0.5) * plaza_mask * 7.0)
+        frame[:, :, 0] += plaza_gleam * 1.1
+        frame[:, :, 1] += plaza_gleam * 0.8
+        frame[:, :, 2] += plaza_gleam * 0.5
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + m_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * m_alpha
+        px = mx0 + np.sin(p_prog * 2.0 * np.pi) * m_sway
+        py = my0 - p_prog * m_drift
+        draw_soft_particles(frame_u8, px, py, m_rad, (255, 220, 130), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 18", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 19: Front Mission 5: Scars of the War - Strike Wanzer Vanguard
+# ==============================================================================
+def render_19_fm5_vanguard(cq=15):
+    print("\n[19/22] Rendering Realm 19: Front Mission 5: Wanzer Vanguard...", flush=True)
+    t0 = time.time()
+    img = load_master("19_front_mission_5_wanzer_vanguard_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "19_front_mission_5_wanzer_vanguard_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Visor & Tactical HUD Sensor
+    is_visor = (NX >= 0.35) & (NX <= 0.65) & (NY >= 0.15) & (NY <= 0.45) & (b > 130) & (b > r * 1.15)
+    visor_mask = cv2.GaussianBlur(is_visor.astype(np.float32), (11, 11), 0)
+    glow_visor = make_glow_bgr(visor_mask, 28.0, 16.0, 4.0)
+
+    # 2. Searchlights & Volumetric Floodlight Haze
+    is_light = (NY <= 0.35) & (r > 150) & (g > 140)
+    light_mask = cv2.GaussianBlur(is_light.astype(np.float32), (25, 25), 0)
+    glow_light = make_glow_bgr(light_mask, 16.0, 14.0, 10.0)
+
+    # 3. Rain Puddles & Wet Tarmac Specular Gleam
+    is_puddle = (NY >= 0.70) & (b > 50) & (b >= r * 0.9)
+    puddle_mask = cv2.GaussianBlur(is_puddle.astype(np.float32), (19, 19), 0)
+
+    # 4. Heavy Rain Particle Streaks
+    np.random.seed(1919)
+    n_rain = 160
+    rx0 = np.random.uniform(0.05, 0.95, n_rain) * W
+    ry0 = np.random.uniform(0.0, 0.90, n_rain) * H
+    r_fall = np.random.uniform(320.0, 480.0, n_rain)
+    r_drift = np.random.uniform(20.0, 45.0, n_rain)
+    r_off = np.random.uniform(0.0, 1.0, n_rain)
+    r_rad = np.random.uniform(0.8, 1.6, n_rain)
+    r_alpha = np.random.uniform(0.35, 0.75, n_rain)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_visor = float(np.sin(phase * 4.0) * 0.12 + np.cos(phase * 8.0) * 0.06 + 1.0)
+        p_light = float(np.sin(phase * 2.0) * 0.15 + 1.0)
+
+        base_frame = img_f + (p_visor * glow_visor) + (p_light * glow_light)
+
+        puddle_disp_x = np.sin(NX * 16.0 + phase * 2.0) * 0.35 * puddle_mask
+        puddle_disp_y = np.cos(NY * 12.0 + phase * 2.0) * 0.25 * puddle_mask
+
+        remap_x = np.clip(X_GRID + puddle_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + puddle_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        puddle_gleam = ((np.sin(NX * 22.0 + NY * 14.0 + phase * 3.0) * 0.5 + 0.5) * puddle_mask * 8.0)
+        frame[:, :, 0] += puddle_gleam * 1.1
+        frame[:, :, 1] += puddle_gleam * 0.9
+        frame[:, :, 2] += puddle_gleam * 0.6
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        # Draw fast rain streaks
+        p_prog = (prog + r_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * r_alpha
+        px = rx0 + p_prog * r_drift
+        py = ry0 + p_prog * r_fall
+        draw_soft_particles(frame_u8, px % W, py % H, r_rad, (220, 235, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 19", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 20: Front Mission 3: Remaster - Zenith Rev & Kirishima Type 97
+# ==============================================================================
+def render_20_fm3_remaster(cq=15):
+    print("\n[20/22] Rendering Realm 20: Front Mission 3: Zenith Remaster...", flush=True)
+    t0 = time.time()
+    img = load_master("20_front_mission_3_wanzer_zenith_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "20_front_mission_3_wanzer_zenith_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Heat Exhaust Vents & Missile Launcher Heat
+    is_exhaust = (r > 160) & (g > 110) & (b < 100) & (NY <= 0.55)
+    exhaust_mask = cv2.GaussianBlur(is_exhaust.astype(np.float32), (13, 13), 0)
+    glow_exhaust = make_glow_bgr(exhaust_mask, 4.0, 14.0, 26.0)
+
+    # 2. Port Harbor Sodium Floodlights
+    is_port_light = (NY <= 0.40) & (r > 180) & (g > 160)
+    port_mask = cv2.GaussianBlur(is_port_light.astype(np.float32), (21, 21), 0)
+    glow_port = make_glow_bgr(port_mask, 12.0, 18.0, 24.0)
+
+    # 3. Dockside Wet Container & Harbor Water Remap
+    is_water = (NY >= 0.72) & (b > 45)
+    water_mask = cv2.GaussianBlur(is_water.astype(np.float32), (17, 17), 0)
+
+    # 4. Atmospheric Drizzle Motes
+    np.random.seed(2020)
+    n_drizzle = 70
+    dx0 = np.random.uniform(0.10, 0.90, n_drizzle) * W
+    dy0 = np.random.uniform(0.10, 0.85, n_drizzle) * H
+    d_drift = np.random.uniform(40.0, 90.0, n_drizzle)
+    d_sway = np.random.uniform(10.0, 24.0, n_drizzle)
+    d_off = np.random.uniform(0.0, 1.0, n_drizzle)
+    d_rad = np.random.uniform(1.0, 2.0, n_drizzle)
+    d_alpha = np.random.uniform(0.35, 0.80, n_drizzle)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_exhaust = float((np.sin(phase * 3.0) * 0.5 + 0.5) * 0.8 + 0.6)
+        p_port = float(np.sin(phase * 2.0) * 0.10 + 1.0)
+
+        base_frame = img_f + (p_exhaust * glow_exhaust) + (p_port * glow_port)
+
+        water_disp_x = np.sin(NX * 14.0 + phase * 2.0) * 0.4 * water_mask
+        water_disp_y = np.cos(NY * 10.0 + phase * 2.0) * 0.3 * water_mask
+
+        remap_x = np.clip(X_GRID + water_disp_x, 0, W - 1).astype(np.float32)
+        remap_y = np.clip(Y_GRID + water_disp_y, 0, H - 1).astype(np.float32)
+        frame = cv2.remap(base_frame, remap_x, remap_y, interpolation=cv2.INTER_LINEAR).astype(np.float32)
+
+        water_gleam = ((np.sin(NX * 18.0 + NY * 12.0 + phase * 2.0) * 0.5 + 0.5) * water_mask * 7.0)
+        frame[:, :, 0] += water_gleam * 1.0
+        frame[:, :, 1] += water_gleam * 0.8
+        frame[:, :, 2] += water_gleam * 0.6
+
+        frame_u8 = np.clip(frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + d_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * d_alpha
+        px = dx0 + np.sin(p_prog * 2.0 * np.pi) * d_sway
+        py = dy0 - p_prog * d_drift
+        draw_soft_particles(frame_u8, px % W, py % H, d_rad, (180, 220, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 20", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 21: Mobile Suit Gundam: UC - RX-93 Nu Gundam Psycho-Frame Resonance
+# ==============================================================================
+def render_21_gundam_nu(cq=15):
+    print("\n[21/22] Rendering Realm 21: RX-93 Nu Gundam Psycho-Frame Resonance...", flush=True)
+    t0 = time.time()
+    img = load_master("21_gundam_nu_psychoframe_resonance_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "21_gundam_nu_psychoframe_resonance_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Emerald Psycho-Frame Resonance Aura & Optical Sensor Eyes
+    is_psycho = (g > 130) & (g > r * 1.15) & (g > b * 0.95)
+    psycho_mask = cv2.GaussianBlur(is_psycho.astype(np.float32), (13, 13), 0)
+    glow_psycho = make_glow_bgr(psycho_mask, 16.0, 32.0, 6.0)
+
+    # 2. Rocket Thruster Vernier Plumes
+    is_thruster = ((b > 170) & (g > 130) & (r < 120)) | ((r > 180) & (g > 130) & (b < 100))
+    thruster_mask = cv2.GaussianBlur(is_thruster.astype(np.float32), (11, 11), 0)
+    glow_thruster = make_glow_bgr(thruster_mask, 24.0, 18.0, 10.0)
+
+    # 3. Earth Horizon Dawn Glow
+    is_earth_dawn = (NY >= 0.58) & (b > 90) & (b > r * 1.1)
+    dawn_mask = cv2.GaussianBlur(is_earth_dawn.astype(np.float32), (25, 25), 0)
+    glow_dawn = make_glow_bgr(dawn_mask, 18.0, 12.0, 4.0)
+
+    # 4. Drifting Psycho-Frame Resonance Stardust
+    np.random.seed(2121)
+    n_psy_motes = 75
+    px0 = np.random.uniform(0.15, 0.85, n_psy_motes) * W
+    py0 = np.random.uniform(0.10, 0.80, n_psy_motes) * H
+    p_drift = np.random.uniform(30.0, 75.0, n_psy_motes)
+    p_sway = np.random.uniform(14.0, 30.0, n_psy_motes)
+    p_off = np.random.uniform(0.0, 1.0, n_psy_motes)
+    p_rad = np.random.uniform(1.2, 2.4, n_psy_motes)
+    p_alpha = np.random.uniform(0.45, 0.90, n_psy_motes)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_psycho = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.2 + 0.4)
+        p_thruster = float(np.sin(phase * 5.0) * 0.15 + np.cos(phase * 9.0) * 0.08 + 1.0)
+        p_dawn = float(np.sin(phase * 1.0) * 0.15 + 1.0)
+
+        base_frame = img_f + (p_psycho * glow_psycho) + (p_thruster * glow_thruster) + (p_dawn * glow_dawn)
+
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + p_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * p_alpha
+        px = px0 + np.sin(p_prog * 2.0 * np.pi) * p_sway
+        py = py0 - p_prog * p_drift
+        draw_soft_particles(frame_u8, px % W, py % H, p_rad, (120, 255, 140), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 21", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 22: Super Robot Taisen: OG - Alteisen Revolver Stake Assault
+# ==============================================================================
+def render_22_srw_alteisen(cq=15):
+    print("\n[22/22] Rendering Realm 22: SRW OG Alteisen Revolver Stake...", flush=True)
+    t0 = time.time()
+    img = load_master("22_srw_og_alteisen_revolver_stake_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "22_srw_og_alteisen_revolver_stake_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Revolver Stake Superheated Kinetic Spike (Incandescent Red/Gold)
+    is_stake = (NX >= 0.48) & (r > 170) & (r > b * 1.3)
+    stake_mask = cv2.GaussianBlur(is_stake.astype(np.float32), (13, 13), 0)
+    glow_stake = make_glow_bgr(stake_mask, 4.0, 18.0, 34.0)
+
+    # 2. Camera Optical Sensor Eye (Crimson Glint)
+    is_sensor = (NX >= 0.40) & (NX <= 0.60) & (NY >= 0.18) & (NY <= 0.38) & (r > 180) & (g < 100) & (b < 100)
+    sensor_mask = cv2.GaussianBlur(is_sensor.astype(np.float32), (9, 9), 0)
+    glow_sensor = make_glow_bgr(sensor_mask, 2.0, 6.0, 28.0)
+
+    # 3. Subterranean Hangar Steam & Hazard Lights
+    is_hangar_light = (r > 180) & (g > 150) & (b < 110)
+    hangar_mask = cv2.GaussianBlur(is_hangar_light.astype(np.float32), (21, 21), 0)
+    glow_hangar = make_glow_bgr(hangar_mask, 6.0, 16.0, 24.0)
+
+    # 4. Industrial Welding Sparks / Hot Embers
+    np.random.seed(2222)
+    n_sparks = 55
+    sx0 = np.random.uniform(0.20, 0.80, n_sparks) * W
+    sy0 = np.random.uniform(0.35, 0.85, n_sparks) * H
+    s_drift = np.random.uniform(40.0, 85.0, n_sparks)
+    s_sway = np.random.uniform(12.0, 28.0, n_sparks)
+    s_off = np.random.uniform(0.0, 1.0, n_sparks)
+    s_rad = np.random.uniform(1.2, 2.3, n_sparks)
+    s_alpha = np.random.uniform(0.50, 0.95, n_sparks)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_stake = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.3 + 0.5)
+        p_sensor = float(np.sin(phase * 4.0) * 0.15 + np.cos(phase * 7.0) * 0.08 + 1.0)
+        p_hangar = float(np.sin(phase * 2.0) * 0.12 + 1.0)
+
+        base_frame = img_f + (p_stake * glow_stake) + (p_sensor * glow_sensor) + (p_hangar * glow_hangar)
+
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + s_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * s_alpha
+        px = sx0 + np.sin(p_prog * 2.0 * np.pi) * s_sway
+        py = sy0 - p_prog * s_drift
+        draw_soft_particles(frame_u8, px % W, py % H, s_rad, (120, 210, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 22", t0, out_path)
+    return out_path
+
+
 # ==============================================================================
 # RENDER REGISTRY & SYNC DISPATCHER
 # ==============================================================================
@@ -1095,9 +1872,20 @@ REALM_RENDERERS = {
     6: ("Volcanic Obsidian Forge", "06_volcanic_obsidian_forge_live.mp4", render_06_forge),
     7: ("Sunken Coral Atlantis", "07_sunken_coral_atlantis_live.mp4", render_07_atlantis),
     8: ("Cyber-Aegis Megacity", "08_cyber_aegis_megacity_live.mp4", render_08_cyber),
-    9: ("Autumn Dragon Valley", "09_autumn_dragon_valley_live.mp4", render_09_valley),
+    9: ("Autumn Dragon Valley", "09_autumn_dragon_valley_v2_live.mp4", render_09_valley),
     10: ("Celestial Starfall Observatory", "10_celestial_starfall_spire_live.mp4", render_10_starfall),
     11: ("Ethereal Dreamscript Nexus", "11_ethereal_dreamscript_live.mp4", render_11_dreamscript),
+    12: ("Celestial Titan Dunes", "12_celestial_dunes_titan_live.mp4", render_12_titan_dunes),
+    13: ("Octopath HD-2D Harbor Citadel", "13_octopath_hd2d_coastal_citadel_live.mp4", render_13_octopath),
+    14: ("FFVII Rebirth Cosmo Canyon", "14_ffvii_rebirth_cosmo_canyon_mako_live.mp4", render_14_ffvii_cosmo),
+    15: ("Ghibli Watermill Sanctuary", "15_ghibli_overgrown_sanctuary_live.mp4", render_15_ghibli_watermill),
+    16: ("The Sleeping Titan Gundam Relic", "16_gundam_relic_overgrown_meadow_live.mp4", render_16_gundam_relic),
+    17: ("Front Mission 5: Wanzer Relic", "17_front_mission_wanzer_relic_live.mp4", render_17_wanzer_relic),
+    18: ("Final Fantasy Resonance Citadel", "18_ff_resonance_crystal_citadel_live.mp4", render_18_ff_resonance),
+    19: ("Front Mission 5: Wanzer Vanguard", "19_front_mission_5_wanzer_vanguard_live.mp4", render_19_fm5_vanguard),
+    20: ("Front Mission 3: Zenith Remaster", "20_front_mission_3_wanzer_zenith_live.mp4", render_20_fm3_remaster),
+    21: ("RX-93 Nu Gundam Psycho-Frame", "21_gundam_nu_psychoframe_resonance_live.mp4", render_21_gundam_nu),
+    22: ("SRW OG: Alteisen Revolver Stake", "22_srw_og_alteisen_revolver_stake_live.mp4", render_22_srw_alteisen),
 }
 
 
