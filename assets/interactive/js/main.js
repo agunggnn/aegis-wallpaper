@@ -29,7 +29,10 @@ const scenes = [
     { id: "srw_alteisen", image: "22_srw_og_alteisen_revolver_stake_4k.jpg", file: "22_srw_og_alteisen_revolver_stake_live.mp4", name: "SUPER ROBOT WARS OG: ALTEISEN" },
     { id: "srw_cybuster", image: "23_srw_og_cybuster_wind_elemental_4k.jpg", file: "23_srw_og_cybuster_wind_elemental_live.mp4", name: "SRW OG: CYBUSTER WIND ELEMENTAL" },
     { id: "srw_daizenghar", image: "24_srw_og_daizenghar_zankantou_4k.jpg", file: "24_srw_og_daizenghar_zankantou_live.mp4", name: "SRW OG: DAIZENGHAR ZANKANTOU" },
-    { id: "srw_soulgain", image: "25_srw_og_soulgain_kirin_fist_4k.jpg", file: "25_srw_og_soulgain_kirin_fist_live.mp4", name: "SRW OG: SOULGAIN MARTIAL FIST" }
+    { id: "srw_soulgain", image: "25_srw_og_soulgain_kirin_fist_4k.jpg", file: "25_srw_og_soulgain_kirin_fist_live.mp4", name: "SRW OG: SOULGAIN MARTIAL FIST" },
+    { id: "srw_neo_granzon", image: "26_srw_og_neo_granzon_shukutaihou_4k.jpg", file: "26_srw_og_neo_granzon_shukutaihou_live.mp4", name: "SRW OG: NEO GRANZON SHUKUTAIHOU" },
+    { id: "srw_srx", image: "27_srw_og_srx_telekinetic_blade_4k.jpg", file: "27_srw_og_srx_telekinetic_blade_live.mp4", name: "SRW OG: SRX TELEKINETIC BLADE" },
+    { id: "srw_zweizergandt", image: "28_srw_og_zweizergandt_shadow_emperor_4k.jpg", file: "28_srw_og_zweizergandt_shadow_emperor_live.mp4", name: "SRW OG: ZWEIZERGANDT SHADOW EMPEROR" }
 ];
 
 let currentSceneIdx = 10;

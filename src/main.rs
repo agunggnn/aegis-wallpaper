@@ -107,6 +107,9 @@ async fn main() -> Result<()> {
             "23 - Super Robot Taisen: Cybuster (Elemental Lord of the Wind)",
             "24 - Super Robot Taisen: Daizenghar (The Sword That Cleaves Evil)",
             "25 - Super Robot Taisen: Soulgain (Axel Almer's Ultimate Martial Arts)",
+            "26 - Super Robot Taisen: Neo Granzon (Shu Shirakawa's Armored Deity of Destruction)",
+            "27 - Super Robot Taisen: SRX (Super Robot X-Type Telekinetic Blade)",
+            "28 - Super Robot Taisen: Zweizergandt (Shadow Mirror Emperor Vindel Mauser)",
         ];
         let name = realm_names.get((actual as usize).saturating_sub(1)).unwrap_or(&"Unknown Realm");
         println!("🌌 Switched Live Realm to [{}]: {}", actual, name);

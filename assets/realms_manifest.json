@@ -507,6 +507,81 @@
         "oni_mask_eyes": { "frequency_harmonic": 4, "amp_bgr": [14.0, 30.0, 8.0] },
         "dimensional_rift": { "frequency_harmonic": 1, "amp_bgr": [18.0, 8.0, 18.0] }
       }
+    },
+    {
+      "index": 26,
+      "id": "srw_neo_granzon",
+      "name": "Super Robot Taisen: OG - Neo Granzon (Shu Shirakawa's Armored Deity of Destruction)",
+      "source_image": "26_srw_og_neo_granzon_shukutaihou_4k.jpg",
+      "output_video": "26_srw_og_neo_granzon_shukutaihou_live.mp4",
+      "liveliness_profile": "gravitational_singularity_rift",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "singularity_event_horizon_sparks",
+        "count": 65,
+        "rise_speed_range": [30.0, 75.0],
+        "sway_amplitude_range": [15.0, 32.0],
+        "radius_range": [1.1, 2.4],
+        "colors": [[255, 120, 200], [255, 230, 100]]
+      },
+      "luminescence": {
+        "shukutaihou_black_hole": { "frequency_harmonic": 1, "amp_bgr": [32.0, 10.0, 28.0] },
+        "mahat_graviton_ring": { "frequency_harmonic": 2, "amp_bgr": [12.0, 24.0, 32.0] },
+        "demonic_crimson_optics": { "frequency_harmonic": 4, "amp_bgr": [6.0, 8.0, 30.0] }
+      }
+    },
+    {
+      "index": 27,
+      "id": "srw_srx",
+      "name": "Super Robot Taisen: OG - SRX (Super Robot X-Type Telekinetic Blade)",
+      "source_image": "27_srw_og_srx_telekinetic_blade_4k.jpg",
+      "output_video": "27_srw_og_srx_telekinetic_blade_live.mp4",
+      "liveliness_profile": "tlink_psychic_field",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "tlink_hexagonal_psycho_sparks",
+        "count": 70,
+        "rise_speed_range": [40.0, 95.0],
+        "sway_amplitude_range": [12.0, 28.0],
+        "radius_range": [1.2, 2.5],
+        "colors": [[140, 255, 160], [100, 240, 255]]
+      },
+      "luminescence": {
+        "zankyuto_emerald_blade": { "frequency_harmonic": 2, "amp_bgr": [14.0, 34.0, 16.0] },
+        "hizol_shoulder_cannons": { "frequency_harmonic": 3, "amp_bgr": [12.0, 28.0, 14.0] },
+        "heroic_visor_sensor": { "frequency_harmonic": 4, "amp_bgr": [10.0, 24.0, 32.0] }
+      }
+    },
+    {
+      "index": 28,
+      "id": "srw_zweizergandt",
+      "name": "Super Robot Taisen: OG2 - Zweizergandt (Shadow Mirror Emperor Vindel Mauser)",
+      "source_image": "28_srw_og_zweizergandt_shadow_emperor_4k.jpg",
+      "output_video": "28_srw_og_zweizergandt_shadow_emperor_live.mp4",
+      "liveliness_profile": "shadow_emperor_rift",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "crimson_shadow_thruster_plumes",
+        "count": 60,
+        "rise_speed_range": [35.0, 80.0],
+        "sway_amplitude_range": [14.0, 28.0],
+        "radius_range": [1.2, 2.3],
+        "colors": [[80, 70, 255], [220, 180, 80]]
+      },
+      "luminescence": {
+        "demon_blade_wings": { "frequency_harmonic": 2, "amp_bgr": [8.0, 12.0, 32.0] },
+        "crimson_knuckle_ki": { "frequency_harmonic": 3, "amp_bgr": [10.0, 14.0, 36.0] },
+        "emperor_gold_crests": { "frequency_harmonic": 1, "amp_bgr": [8.0, 24.0, 30.0] }
+      }
     }
   ]
 }
