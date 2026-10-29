@@ -26,7 +26,10 @@ const scenes = [
     { id: "fm5_vanguard", image: "19_front_mission_5_wanzer_vanguard_4k.jpg", file: "19_front_mission_5_wanzer_vanguard_live.mp4", name: "FRONT MISSION 5: WANZER VANGUARD" },
     { id: "fm3_remaster", image: "20_front_mission_3_wanzer_zenith_4k.jpg", file: "20_front_mission_3_wanzer_zenith_live.mp4", name: "FRONT MISSION 3: ZENITH REMASTER" },
     { id: "gundam_nu", image: "21_gundam_nu_psychoframe_resonance_4k.jpg", file: "21_gundam_nu_psychoframe_resonance_live.mp4", name: "RX-93 NU GUNDAM PSYCHO-FRAME" },
-    { id: "srw_alteisen", image: "22_srw_og_alteisen_revolver_stake_4k.jpg", file: "22_srw_og_alteisen_revolver_stake_live.mp4", name: "SUPER ROBOT WARS OG: ALTEISEN" }
+    { id: "srw_alteisen", image: "22_srw_og_alteisen_revolver_stake_4k.jpg", file: "22_srw_og_alteisen_revolver_stake_live.mp4", name: "SUPER ROBOT WARS OG: ALTEISEN" },
+    { id: "srw_cybuster", image: "23_srw_og_cybuster_wind_elemental_4k.jpg", file: "23_srw_og_cybuster_wind_elemental_live.mp4", name: "SRW OG: CYBUSTER WIND ELEMENTAL" },
+    { id: "srw_daizenghar", image: "24_srw_og_daizenghar_zankantou_4k.jpg", file: "24_srw_og_daizenghar_zankantou_live.mp4", name: "SRW OG: DAIZENGHAR ZANKANTOU" },
+    { id: "srw_soulgain", image: "25_srw_og_soulgain_kirin_fist_4k.jpg", file: "25_srw_og_soulgain_kirin_fist_live.mp4", name: "SRW OG: SOULGAIN MARTIAL FIST" }
 ];
 
 let currentSceneIdx = 10;

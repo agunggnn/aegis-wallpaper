@@ -1861,6 +1861,197 @@ def render_22_srw_alteisen(cq=15):
 
 
 # ==============================================================================
+# REALM 23: Super Robot Taisen: OG - Cybuster (The Elemental Lord of the Wind)
+# ==============================================================================
+def render_23_cybuster(cq=15):
+    print("\n[23/25] Rendering Realm 23: SRW OG Cybuster (Lord of the Wind)...", flush=True)
+    t0 = time.time()
+    img = load_master("23_srw_og_cybuster_wind_elemental_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "23_srw_og_cybuster_wind_elemental_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Cyan Lapis Crystals & Mana Flow Conduits
+    is_lapis = (b > 140) & (b > r * 1.15) & (g > 130)
+    lapis_mask = cv2.GaussianBlur(is_lapis.astype(np.float32), (13, 13), 0)
+    glow_lapis = make_glow_bgr(lapis_mask, 32.0, 24.0, 6.0)
+
+    # 2. Sacred Discutter Holy Sword Edge Glint
+    is_blade = (r > 190) & (g > 190) & (b > 190) & (NX <= 0.55)
+    blade_mask = cv2.GaussianBlur(is_blade.astype(np.float32), (9, 9), 0)
+    glow_blade = make_glow_bgr(blade_mask, 22.0, 22.0, 22.0)
+
+    # 3. La Gias Upper Atmosphere Astral Mist
+    is_sky = (NY <= 0.40) & (g > 120) & (b > 120)
+    sky_mask = cv2.GaussianBlur(is_sky.astype(np.float32), (25, 25), 0)
+    glow_sky = make_glow_bgr(sky_mask, 16.0, 14.0, 4.0)
+
+    # 4. Swirling Emerald & Azure Prana Wind Particles
+    np.random.seed(2323)
+    n_wind = 65
+    wx0 = np.random.uniform(0.10, 0.90, n_wind) * W
+    wy0 = np.random.uniform(0.10, 0.85, n_wind) * H
+    w_drift = np.random.uniform(35.0, 80.0, n_wind)
+    w_sway = np.random.uniform(14.0, 32.0, n_wind)
+    w_off = np.random.uniform(0.0, 1.0, n_wind)
+    w_rad = np.random.uniform(1.2, 2.4, n_wind)
+    w_alpha = np.random.uniform(0.40, 0.85, n_wind)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_lapis = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.2 + 0.4)
+        p_blade = float(np.sin(phase * 4.0) * 0.15 + np.cos(phase * 8.0) * 0.08 + 1.0)
+        p_sky = float(np.sin(phase * 1.0) * 0.12 + 1.0)
+
+        base_frame = img_f + (p_lapis * glow_lapis) + (p_blade * glow_blade) + (p_sky * glow_sky)
+
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + w_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * w_alpha
+        px = wx0 + np.sin(p_prog * 2.0 * np.pi) * w_sway
+        py = wy0 - p_prog * w_drift
+        draw_soft_particles(frame_u8, px % W, py % H, w_rad, (220, 255, 140), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 23", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 24: Super Robot Taisen: OG - Daizenghar (The Sword That Cleaves Evil)
+# ==============================================================================
+def render_24_daizenghar(cq=15):
+    print("\n[24/25] Rendering Realm 24: SRW OG Daizenghar (Zankantou)...", flush=True)
+    t0 = time.time()
+    img = load_master("24_srw_og_daizenghar_zankantou_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "24_srw_og_daizenghar_zankantou_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Colossal Zankantou Blazing Molten Edge (Superheated Orange-Red)
+    is_blade = (r > 170) & (g > 90) & (b < 90)
+    blade_mask = cv2.GaussianBlur(is_blade.astype(np.float32), (15, 15), 0)
+    glow_blade = make_glow_bgr(blade_mask, 4.0, 18.0, 36.0)
+
+    # 2. Golden Kabuto Crest Horns & Amber Gaze
+    is_crest = (r > 180) & (g > 150) & (b < 110) & (NY <= 0.45)
+    crest_mask = cv2.GaussianBlur(is_crest.astype(np.float32), (11, 11), 0)
+    glow_crest = make_glow_bgr(crest_mask, 6.0, 20.0, 30.0)
+
+    # 3. Storm Cloud Crimson Lightning Flash
+    is_lightning = (r > 140) & (g < 110) & (b < 110) & (NY <= 0.35)
+    lightning_mask = cv2.GaussianBlur(is_lightning.astype(np.float32), (25, 25), 0)
+    glow_lightning = make_glow_bgr(lightning_mask, 4.0, 8.0, 22.0)
+
+    # 4. Volcanic Fiery Sparks & Burning Embers
+    np.random.seed(2424)
+    n_embers = 55
+    ex0 = np.random.uniform(0.15, 0.85, n_embers) * W
+    ey0 = np.random.uniform(0.30, 0.85, n_embers) * H
+    e_drift = np.random.uniform(40.0, 90.0, n_embers)
+    e_sway = np.random.uniform(12.0, 26.0, n_embers)
+    e_off = np.random.uniform(0.0, 1.0, n_embers)
+    e_rad = np.random.uniform(1.2, 2.3, n_embers)
+    e_alpha = np.random.uniform(0.50, 0.95, n_embers)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_blade = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.3 + 0.5)
+        p_crest = float(np.sin(phase * 3.0) * 0.15 + 1.0)
+
+        # Stochastic lightning flashes (sharp exponential spikes)
+        lightning_spike = float(max(0.0, np.sin(phase * 4.0 + 0.8)) ** 14.0) * 2.2 + float(max(0.0, np.cos(phase * 6.0)) ** 16.0) * 1.8
+
+        base_frame = img_f + (p_blade * glow_blade) + (p_crest * glow_crest) + (lightning_spike * glow_lightning)
+
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + e_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * e_alpha
+        px = ex0 + np.sin(p_prog * 2.0 * np.pi) * e_sway
+        py = ey0 - p_prog * e_drift
+        draw_soft_particles(frame_u8, px % W, py % H, e_rad, (60, 160, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 24", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
+# REALM 25: Super Robot Taisen: OG - Soulgain (Axel Almer's Ultimate Martial Arts)
+# ==============================================================================
+def render_25_soulgain(cq=15):
+    print("\n[25/25] Rendering Realm 25: SRW OG Soulgain (Kirin Martial Fist)...", flush=True)
+    t0 = time.time()
+    img = load_master("25_srw_og_soulgain_kirin_fist_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "25_srw_og_soulgain_kirin_fist_live.mp4")
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Kirin & Genbu Spirit Energy Knuckle Aura (Crackling Cyan / Gold)
+    is_fist = ((b > 150) & (g > 140) & (r < 140)) | ((r > 180) & (g > 150) & (b < 110))
+    fist_mask = cv2.GaussianBlur(is_fist.astype(np.float32), (15, 15), 0)
+    glow_fist = make_glow_bgr(fist_mask, 28.0, 26.0, 14.0)
+
+    # 2. Oni Helmet Crest & Emerald Optic Sensor Eyes
+    is_eyes = (g > 160) & (g > r * 1.15) & (NY <= 0.40)
+    eyes_mask = cv2.GaussianBlur(is_eyes.astype(np.float32), (9, 9), 0)
+    glow_eyes = make_glow_bgr(eyes_mask, 14.0, 30.0, 8.0)
+
+    # 3. Dimensional Rift Swirling Aura
+    is_rift = (NY <= 0.35) & (b > 110) & (r > 90)
+    rift_mask = cv2.GaussianBlur(is_rift.astype(np.float32), (25, 25), 0)
+    glow_rift = make_glow_bgr(rift_mask, 18.0, 8.0, 18.0)
+
+    # 4. Crackling Ki Spirits & Dimensional Stardust
+    np.random.seed(2525)
+    n_ki = 60
+    kx0 = np.random.uniform(0.15, 0.85, n_ki) * W
+    ky0 = np.random.uniform(0.20, 0.85, n_ki) * H
+    k_drift = np.random.uniform(35.0, 85.0, n_ki)
+    k_sway = np.random.uniform(14.0, 30.0, n_ki)
+    k_off = np.random.uniform(0.0, 1.0, n_ki)
+    k_rad = np.random.uniform(1.2, 2.3, n_ki)
+    k_alpha = np.random.uniform(0.45, 0.90, n_ki)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_fist = float((np.sin(phase * 3.0) * 0.5 + 0.5) * 1.2 + 0.5)
+        p_eyes = float(np.sin(phase * 4.0) * 0.15 + np.cos(phase * 7.0) * 0.08 + 1.0)
+        p_rift = float(np.sin(phase * 1.0) * 0.15 + 1.0)
+
+        base_frame = img_f + (p_fist * glow_fist) + (p_eyes * glow_eyes) + (p_rift * glow_rift)
+
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + k_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * k_alpha
+        px = kx0 + np.sin(p_prog * 2.0 * np.pi) * k_sway
+        py = ky0 - p_prog * k_drift
+        draw_soft_particles(frame_u8, px % W, py % H, k_rad, (255, 220, 100), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 25", t0, out_path)
+    return out_path
+
+
+# ==============================================================================
 # RENDER REGISTRY & SYNC DISPATCHER
 # ==============================================================================
 REALM_RENDERERS = {
@@ -1886,6 +2077,9 @@ REALM_RENDERERS = {
     20: ("Front Mission 3: Zenith Remaster", "20_front_mission_3_wanzer_zenith_live.mp4", render_20_fm3_remaster),
     21: ("RX-93 Nu Gundam Psycho-Frame", "21_gundam_nu_psychoframe_resonance_live.mp4", render_21_gundam_nu),
     22: ("SRW OG: Alteisen Revolver Stake", "22_srw_og_alteisen_revolver_stake_live.mp4", render_22_srw_alteisen),
+    23: ("SRW OG: Cybuster Wind Lord", "23_srw_og_cybuster_wind_elemental_live.mp4", render_23_cybuster),
+    24: ("SRW OG: Daizenghar Zankantou", "24_srw_og_daizenghar_zankantou_live.mp4", render_24_daizenghar),
+    25: ("SRW OG: Soulgain Martial Fist", "25_srw_og_soulgain_kirin_fist_live.mp4", render_25_soulgain),
 }
 
 

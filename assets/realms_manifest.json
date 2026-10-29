@@ -432,6 +432,81 @@
         "optical_sensor": { "frequency_harmonic": 4, "amp_bgr": [2.0, 6.0, 28.0] },
         "hangar_hazard_lights": { "frequency_harmonic": 2, "amp_bgr": [6.0, 16.0, 24.0] }
       }
+    },
+    {
+      "index": 23,
+      "id": "srw_cybuster",
+      "name": "Super Robot Taisen: OG - Cybuster (The Elemental Lord of the Wind)",
+      "source_image": "23_srw_og_cybuster_wind_elemental_4k.jpg",
+      "output_video": "23_srw_og_cybuster_wind_elemental_live.mp4",
+      "liveliness_profile": "wind_elemental_la_gias",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "emerald_prana_stardust",
+        "count": 65,
+        "drift_speed_range": [35.0, 80.0],
+        "sway_amplitude_range": [14.0, 32.0],
+        "radius_range": [1.2, 2.4],
+        "colors": [[220, 255, 140]]
+      },
+      "luminescence": {
+        "lapis_crystals": { "frequency_harmonic": 2, "amp_bgr": [32.0, 24.0, 6.0] },
+        "discutter_blade": { "frequency_harmonic": 4, "amp_bgr": [22.0, 22.0, 22.0] },
+        "astral_sky": { "frequency_harmonic": 1, "amp_bgr": [16.0, 14.0, 4.0] }
+      }
+    },
+    {
+      "index": 24,
+      "id": "srw_daizenghar",
+      "name": "Super Robot Taisen: OG - Daizenghar (The Sword That Cleaves Evil)",
+      "source_image": "24_srw_og_daizenghar_zankantou_4k.jpg",
+      "output_video": "24_srw_og_daizenghar_zankantou_live.mp4",
+      "liveliness_profile": "zankantou_lightning_storm",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "molten_flame_embers",
+        "count": 55,
+        "rise_speed_range": [40.0, 90.0],
+        "sway_amplitude_range": [12.0, 26.0],
+        "radius_range": [1.2, 2.3],
+        "colors": [[60, 160, 255]]
+      },
+      "luminescence": {
+        "zankantou_blade": { "frequency_harmonic": 2, "amp_bgr": [4.0, 18.0, 36.0] },
+        "kabuto_horns": { "frequency_harmonic": 3, "amp_bgr": [6.0, 20.0, 30.0] },
+        "crimson_lightning": { "frequency_harmonic": 4, "amp_bgr": [4.0, 8.0, 22.0] }
+      }
+    },
+    {
+      "index": 25,
+      "id": "srw_soulgain",
+      "name": "Super Robot Taisen: OG - Soulgain (Axel Almer's Ultimate Martial Arts)",
+      "source_image": "25_srw_og_soulgain_kirin_fist_4k.jpg",
+      "output_video": "25_srw_og_soulgain_kirin_fist_live.mp4",
+      "liveliness_profile": "kirin_martial_rift",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "dimensional_ki_shockwaves",
+        "count": 60,
+        "rise_speed_range": [35.0, 85.0],
+        "sway_amplitude_range": [14.0, 30.0],
+        "radius_range": [1.2, 2.3],
+        "colors": [[255, 220, 100]]
+      },
+      "luminescence": {
+        "kirin_knuckles": { "frequency_harmonic": 3, "amp_bgr": [28.0, 26.0, 14.0] },
+        "oni_mask_eyes": { "frequency_harmonic": 4, "amp_bgr": [14.0, 30.0, 8.0] },
+        "dimensional_rift": { "frequency_harmonic": 1, "amp_bgr": [18.0, 8.0, 18.0] }
+      }
     }
   ]
 }

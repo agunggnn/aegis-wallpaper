@@ -42,8 +42,8 @@ pub fn get_tool_definitions() -> Vec<ToolDefinition> {
                     "active_scene": {
                         "type": "integer",
                         "minimum": 0,
-                        "maximum": 21,
-                        "description": "Index of live animated 4K video scene (0: Citadel, 16: Front Mission 5 Relic, 18: FM5 Vanguard, 19: FM3 Zenith Remaster, 20: RX-93 Nu Gundam, 21: SRW OG Alteisen)."
+                        "maximum": 24,
+                        "description": "Index of live animated 4K video scene (0: Citadel, 21: Alteisen, 22: Cybuster, 23: Daizenghar, 24: Soulgain)."
                     },
                     "sound_pack": {
                         "type": "string",

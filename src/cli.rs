@@ -14,7 +14,7 @@ pub struct Cli {
     pub mcp: bool,
 
     /// Show current wallpaper engine status and active wallpaper
-    #[arg(short, long)]
+    #[arg(long)]
     pub status: bool,
 
     /// List all installed wallpapers in library
@@ -25,7 +25,7 @@ pub struct Cli {
     #[arg(short = 's', long)]
     pub switch: Option<String>,
 
-    /// Switch live RPG realm (1 to 10)
+    /// Switch live RPG realm (1 to 25)
     #[arg(long)]
     pub realm: Option<u32>,
 
