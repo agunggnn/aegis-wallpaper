@@ -1902,15 +1902,25 @@ def sync_suites(selected_indices=None):
     target_indices = selected_indices if selected_indices else list(REALM_RENDERERS.keys())
     mp4_files = [REALM_RENDERERS[idx][1] for idx in target_indices]
 
-    print(f"\nSyncing {len(mp4_files)} master MP4 video(s) and interactive web suite to deployment targets...", flush=True)
+    print(f"\nSyncing {len(mp4_files)} master MP4 video(s), 4K JPG plates, and interactive web suite to deployment targets...", flush=True)
     for dst in DESTINATIONS:
         if not os.path.exists(dst):
             continue
+        # Sync MP4 video loops
         for f in mp4_files:
             src_f = os.path.join(OUT_DIR, f)
             dst_f = os.path.join(dst, f)
             if os.path.exists(src_f) and os.path.abspath(src_f) != os.path.abspath(dst_f):
                 shutil.copy2(src_f, dst_f)
+        # Sync all 4K JPG master plates
+        if os.path.exists(REPO_INTERACTIVE):
+            for img_f in os.listdir(REPO_INTERACTIVE):
+                if img_f.endswith(".jpg") or img_f.endswith(".png"):
+                    src_img = os.path.join(REPO_INTERACTIVE, img_f)
+                    dst_img = os.path.join(dst, img_f)
+                    if os.path.exists(src_img) and os.path.abspath(src_img) != os.path.abspath(dst_img):
+                        shutil.copy2(src_img, dst_img)
+        # Sync HTML / JS / CSS assets
         for wf in web_files:
             src_wf = os.path.join(REPO_INTERACTIVE, wf)
             dst_wf = os.path.join(dst, wf)

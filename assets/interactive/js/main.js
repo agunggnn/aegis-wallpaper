@@ -60,6 +60,15 @@ function setScene(idx) {
     if (renderEngineMode === 0 || !scene.file) {
         // Mode 0 or Image-only: Pure 4K Lossless Canvas FX
         if (bgImage) {
+            bgImage.onerror = () => {
+                console.warn(`[Aegis] Failed to load image plate: ${scene.image}. Falling back to video loop.`);
+                if (bgVideo && scene.file) {
+                    bgVideo.src = scene.file;
+                    bgVideo.classList.add('active');
+                    bgImage.classList.remove('active');
+                    bgVideo.play().catch(() => {});
+                }
+            };
             bgImage.src = scene.image;
             bgImage.classList.add('active');
         }
@@ -70,10 +79,21 @@ function setScene(idx) {
     } else {
         // Mode 1: Hardware Live Video MP4 Loop
         if (bgImage) {
+            bgImage.onerror = () => {
+                console.warn(`[Aegis] Poster image missing: ${scene.image}`);
+            };
             bgImage.src = scene.image; // Keep matching poster underneath during transitions
             bgImage.classList.remove('active');
         }
         if (bgVideo) {
+            bgVideo.onerror = () => {
+                console.warn(`[Aegis] Failed to play video: ${scene.file}. Falling back to image.`);
+                if (bgImage) {
+                    bgImage.src = scene.image;
+                    bgImage.classList.add('active');
+                    bgVideo.classList.remove('active');
+                }
+            };
             if (!bgVideo.src.endsWith(scene.file)) {
                 bgVideo.src = scene.file;
                 bgVideo.load();
