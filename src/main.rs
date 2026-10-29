@@ -140,7 +140,7 @@ async fn main() -> Result<()> {
             .status();
         std::thread::sleep(std::time::Duration::from_millis(500));
         let _ = std::process::Command::new("powershell")
-            .args(["-NoProfile", "-Command", "Start-Process 'C:\\Users\\agung\\AppData\\Local\\Programs\\Lively Wallpaper\\Lively.exe'"])
+            .args(["-NoProfile", "-Command", "Start-Process 'shell:AppsFolder\\12030rocksdanister.LivelyWallpaper_97hta09mmv6hy!App'"])
             .spawn();
         println!("✅ Lively Wallpaper restarted.");
         return Ok(());
