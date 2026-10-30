@@ -25,7 +25,7 @@ pub struct Cli {
     #[arg(short = 's', long)]
     pub switch: Option<String>,
 
-    /// Switch live RPG realm (1 to 28)
+    /// Switch live RPG realm (1 to 31)
     #[arg(long)]
     pub realm: Option<u32>,
 

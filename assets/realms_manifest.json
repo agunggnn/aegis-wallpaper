@@ -582,6 +582,81 @@
         "crimson_knuckle_ki": { "frequency_harmonic": 3, "amp_bgr": [10.0, 14.0, 36.0] },
         "emperor_gold_crests": { "frequency_harmonic": 1, "amp_bgr": [8.0, 24.0, 30.0] }
       }
+    },
+    {
+      "index": 29,
+      "id": "srw_tatsumaki_zankantou",
+      "name": "Super Robot Taisen: OG - Tatsumaki Zankantou (Daizenghar & Aussenseiter Tornado Cleaver)",
+      "source_image": "29_srw_og_tatsumaki_zankantou_4k.jpg",
+      "output_video": "29_srw_og_tatsumaki_zankantou_live.mp4",
+      "liveliness_profile": "tatsumaki_firestorm_vortex",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "whirling_plasma_fire_embers",
+        "count": 75,
+        "rise_speed_range": [45.0, 110.0],
+        "sway_amplitude_range": [16.0, 35.0],
+        "radius_range": [1.2, 2.5],
+        "colors": [[40, 140, 255], [30, 200, 255]]
+      },
+      "luminescence": {
+        "ignited_zankantou_blade": { "frequency_harmonic": 2, "amp_bgr": [4.0, 22.0, 42.0] },
+        "aussenseiter_cyber_optics": { "frequency_harmonic": 4, "amp_bgr": [8.0, 8.0, 36.0] },
+        "firestorm_tornado": { "frequency_harmonic": 1, "amp_bgr": [6.0, 18.0, 30.0] }
+      }
+    },
+    {
+      "index": 30,
+      "id": "srw_ialdabaoth",
+      "name": "Super Robot Taisen: OG Gaiden - Ialdabaoth (Folka Albark's Gouha Kishinken)",
+      "source_image": "30_srw_og_ialdabaoth_shura_god_4k.jpg",
+      "output_video": "30_srw_og_ialdabaoth_shura_god_live.mp4",
+      "liveliness_profile": "shura_god_plasma_mane",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "gouha_ki_dragon_sparks",
+        "count": 70,
+        "rise_speed_range": [40.0, 95.0],
+        "sway_amplitude_range": [14.0, 32.0],
+        "radius_range": [1.2, 2.4],
+        "colors": [[60, 200, 255], [40, 80, 255]]
+      },
+      "luminescence": {
+        "flowing_flame_mane": { "frequency_harmonic": 2, "amp_bgr": [4.0, 16.0, 38.0] },
+        "golden_knuckle_strike": { "frequency_harmonic": 3, "amp_bgr": [10.0, 32.0, 40.0] },
+        "emerald_visor_eyes": { "frequency_harmonic": 4, "amp_bgr": [24.0, 34.0, 8.0] }
+      }
+    },
+    {
+      "index": 31,
+      "id": "srw_dis_astranagant",
+      "name": "Super Robot Taisen: Alpha 3 / OG - Dis Astranagant (Cobray Gordon's Ain Soph Aur)",
+      "source_image": "31_srw_og_dis_astranagant_ain_soph_aur_4k.jpg",
+      "output_video": "31_srw_og_dis_astranagant_ain_soph_aur_live.mp4",
+      "liveliness_profile": "ain_soph_aur_abyssal_judgment",
+      "fluid_motion": {
+        "enabled": false
+      },
+      "particles": {
+        "enabled": true,
+        "type": "abyssal_demon_feathers_and_stardust",
+        "count": 65,
+        "rise_speed_range": [30.0, 75.0],
+        "sway_amplitude_range": [12.0, 26.0],
+        "radius_range": [1.1, 2.2],
+        "colors": [[255, 200, 180], [180, 255, 200]]
+      },
+      "luminescence": {
+        "ain_soph_aur_judgment_beam": { "frequency_harmonic": 1, "amp_bgr": [36.0, 34.0, 28.0] },
+        "demon_angel_wings_conduits": { "frequency_harmonic": 2, "amp_bgr": [28.0, 12.0, 26.0] },
+        "gun_eden_skull_core": { "frequency_harmonic": 3, "amp_bgr": [14.0, 28.0, 18.0] }
+      }
     }
   ]
 }

@@ -2234,6 +2234,189 @@ def render_28_zweizergandt(cq=15):
     return out_path
 
 
+def render_29_tatsumaki_zankantou(cq=15):
+    """Realm 29: Super Robot Taisen OG - Tatsumaki Zankantou (Daizenghar & Aussenseiter Tornado Cleaver)"""
+    print("\n[29/31] Rendering Realm 29: SRW OG Tatsumaki Zankantou...", flush=True)
+    t0 = time.time()
+    img = load_master("29_srw_og_tatsumaki_zankantou_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "29_srw_og_tatsumaki_zankantou_live.mp4")
+
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Ignited Colossal Zankantou Thermal Plasma Blade
+    is_blade = (r > 160) & (g > 95) & (b < 100)
+    blade_mask = cv2.GaussianBlur(is_blade.astype(np.float32), (19, 19), 0)
+    glow_blade = make_glow_bgr(blade_mask, 4.0, 22.0, 42.0)
+
+    # 2. Aussenseiter Cybernetic Optic Visor & Thrusters
+    is_eyes = (r > 175) & (r > g * 1.25) & (NY >= 0.32)
+    eyes_mask = cv2.GaussianBlur(is_eyes.astype(np.float32), (9, 9), 0)
+    glow_eyes = make_glow_bgr(eyes_mask, 8.0, 8.0, 36.0)
+
+    # 3. Firestorm Tornado Vortex & Heat Radiance
+    is_vortex = (r > 130) & (g > 70) & (b < 110)
+    vortex_mask = cv2.GaussianBlur(is_vortex.astype(np.float32), (25, 25), 0)
+    glow_vortex = make_glow_bgr(vortex_mask, 6.0, 18.0, 30.0)
+
+    # 4. Whirling Thermal Plasma Embers & Kinetic Sparks
+    np.random.seed(2929)
+    n_sparks = 75
+    tx0 = np.random.uniform(0.10, 0.90, n_sparks) * W
+    ty0 = np.random.uniform(0.15, 0.90, n_sparks) * H
+    t_drift = np.random.uniform(45.0, 110.0, n_sparks)
+    t_sway = np.random.uniform(16.0, 35.0, n_sparks)
+    t_off = np.random.uniform(0.0, 1.0, n_sparks)
+    t_rad = np.random.uniform(1.2, 2.5, n_sparks)
+    t_alpha = np.random.uniform(0.50, 0.95, n_sparks)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_blade = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.3 + 0.6)
+        p_eyes = float(np.sin(phase * 4.0) * 0.20 + 1.0)
+        p_vortex = float(np.sin(phase * 1.0) * 0.20 + 1.0)
+
+        base_frame = img_f + (p_blade * glow_blade) + (p_eyes * glow_eyes) + (p_vortex * glow_vortex)
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + t_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * t_alpha
+        px = tx0 + np.sin(p_prog * 2.0 * np.pi) * t_sway
+        py = ty0 - p_prog * t_drift
+        draw_soft_particles(frame_u8, px % W, py % H, t_rad, (40, 140, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 29", t0, out_path)
+    return out_path
+
+
+def render_30_ialdabaoth(cq=15):
+    """Realm 30: Super Robot Taisen OG Gaiden - Ialdabaoth (Folka Albark's Gouha Kishinken)"""
+    print("\n[30/31] Rendering Realm 30: SRW OG Ialdabaoth (Gouha Kishinken)...", flush=True)
+    t0 = time.time()
+    img = load_master("30_srw_og_ialdabaoth_shura_god_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "30_srw_og_ialdabaoth_shura_god_live.mp4")
+
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Flowing Plasma Mane (Solar Flare Flaming Hair)
+    is_mane = (NY <= 0.48) & (r > 145) & (g < 125)
+    mane_mask = cv2.GaussianBlur(is_mane.astype(np.float32), (21, 21), 0)
+    glow_mane = make_glow_bgr(mane_mask, 4.0, 16.0, 38.0)
+
+    # 2. Golden Knuckle Strike & Ki Dragon Vortex
+    is_fist = (NY >= 0.32) & (NX >= 0.28) & (NX <= 0.72) & (r > 155) & (g > 125)
+    fist_mask = cv2.GaussianBlur(is_fist.astype(np.float32), (17, 17), 0)
+    glow_fist = make_glow_bgr(fist_mask, 10.0, 32.0, 40.0)
+
+    # 3. Emerald Optic Visor Eyes
+    is_eyes = (g > 145) & (g > r * 1.15) & (NY <= 0.35)
+    eyes_mask = cv2.GaussianBlur(is_eyes.astype(np.float32), (7, 7), 0)
+    glow_eyes = make_glow_bgr(eyes_mask, 24.0, 34.0, 8.0)
+
+    # 4. Blazing Ki Dragon Shockwaves & Martial Sparks
+    np.random.seed(3030)
+    n_ki = 70
+    ix0 = np.random.uniform(0.12, 0.88, n_ki) * W
+    iy0 = np.random.uniform(0.15, 0.88, n_ki) * H
+    i_drift = np.random.uniform(40.0, 95.0, n_ki)
+    i_sway = np.random.uniform(14.0, 32.0, n_ki)
+    i_off = np.random.uniform(0.0, 1.0, n_ki)
+    i_rad = np.random.uniform(1.2, 2.4, n_ki)
+    i_alpha = np.random.uniform(0.50, 0.95, n_ki)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_mane = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.2 + 0.6)
+        p_fist = float((np.sin(phase * 3.0) * 0.5 + 0.5) * 1.3 + 0.6)
+        p_eyes = float(np.sin(phase * 4.0) * 0.15 + np.cos(phase * 7.0) * 0.08 + 1.0)
+
+        base_frame = img_f + (p_mane * glow_mane) + (p_fist * glow_fist) + (p_eyes * glow_eyes)
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + i_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * i_alpha
+        px = ix0 + np.sin(p_prog * 2.0 * np.pi) * i_sway
+        py = iy0 - p_prog * i_drift
+        draw_soft_particles(frame_u8, px % W, py % H, i_rad, (60, 200, 255), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 30", t0, out_path)
+    return out_path
+
+
+def render_31_dis_astranagant(cq=15):
+    """Realm 31: Super Robot Taisen Alpha 3 / OG - Dis Astranagant (Cobray Gordon's Ain Soph Aur)"""
+    print("\n[31/31] Rendering Realm 31: SRW OG Dis Astranagant (Ain Soph Aur)...", flush=True)
+    t0 = time.time()
+    img = load_master("31_srw_og_dis_astranagant_ain_soph_aur_4k.jpg")
+    out_path = os.path.join(OUT_DIR, "31_srw_og_dis_astranagant_ain_soph_aur_live.mp4")
+
+    img_f = img.astype(np.float32)
+    b, g, r = cv2.split(img_f)
+
+    # 1. Ain Soph Aur Reality-Rending Judgment Beam & Cruciform Scepter
+    is_beam = (b > 155) & (g > 145) & (r > 145)
+    beam_mask = cv2.GaussianBlur(is_beam.astype(np.float32), (23, 23), 0)
+    glow_beam = make_glow_bgr(beam_mask, 36.0, 34.0, 28.0)
+
+    # 2. Demon-Angel Wing Conduits & Amethyst Feathers
+    is_wings = ((NX <= 0.36) | (NX >= 0.64)) & (b > 105) & (r > 85)
+    wings_mask = cv2.GaussianBlur(is_wings.astype(np.float32), (19, 19), 0)
+    glow_wings = make_glow_bgr(wings_mask, 28.0, 12.0, 26.0)
+
+    # 3. Gun-Eden Skull Core & Emerald Conduits
+    is_skull = (NY >= 0.25) & (NY <= 0.50) & (NX >= 0.38) & (NX <= 0.62) & (g > 125)
+    skull_mask = cv2.GaussianBlur(is_skull.astype(np.float32), (13, 13), 0)
+    glow_skull = make_glow_bgr(skull_mask, 14.0, 28.0, 18.0)
+
+    # 4. Floating Abyssal Stardust & Demon Feathers
+    np.random.seed(3131)
+    n_feathers = 65
+    dx0 = np.random.uniform(0.10, 0.90, n_feathers) * W
+    dy0 = np.random.uniform(0.15, 0.90, n_feathers) * H
+    d_drift = np.random.uniform(30.0, 75.0, n_feathers)
+    d_sway = np.random.uniform(12.0, 26.0, n_feathers)
+    d_off = np.random.uniform(0.0, 1.0, n_feathers)
+    d_rad = np.random.uniform(1.1, 2.2, n_feathers)
+    d_alpha = np.random.uniform(0.45, 0.90, n_feathers)
+
+    proc = open_nvenc(out_path, cq=cq)
+
+    for i in range(NUM_FRAMES):
+        prog = i / float(NUM_FRAMES)
+        phase = 2.0 * np.pi * prog
+
+        p_beam = float((np.sin(phase * 2.0) * 0.5 + 0.5) * 1.3 + 0.6)
+        p_wings = float(np.sin(phase * 1.0) * 0.20 + 1.0)
+        p_skull = float(np.sin(phase * 3.0) * 0.15 + np.cos(phase * 6.0) * 0.08 + 1.0)
+
+        base_frame = img_f + (p_beam * glow_beam) + (p_wings * glow_wings) + (p_skull * glow_skull)
+        frame_u8 = np.clip(base_frame, 0, 255).astype(np.uint8)
+
+        p_prog = (prog + d_off) % 1.0
+        p_a = (np.sin(p_prog * np.pi) ** 1.5) * d_alpha
+        px = dx0 + np.sin(p_prog * 2.0 * np.pi) * d_sway
+        py = dy0 - p_prog * d_drift
+        draw_soft_particles(frame_u8, px % W, py % H, d_rad, (255, 200, 180), p_a)
+
+        proc.stdin.write(frame_u8.tobytes())
+
+    finish_nvenc(proc, "Realm 31", t0, out_path)
+    return out_path
+
+
 # ==============================================================================
 # RENDER REGISTRY & SYNC DISPATCHER
 # ==============================================================================
@@ -2266,6 +2449,9 @@ REALM_RENDERERS = {
     26: ("SRW OG: Neo Granzon Shukutaihou", "26_srw_og_neo_granzon_shukutaihou_live.mp4", render_26_neo_granzon),
     27: ("SRW OG: SRX Telekinetic Blade", "27_srw_og_srx_telekinetic_blade_live.mp4", render_27_srx),
     28: ("SRW OG: Zweizergandt Shadow Emperor", "28_srw_og_zweizergandt_shadow_emperor_live.mp4", render_28_zweizergandt),
+    29: ("SRW OG: Tatsumaki Zankantou", "29_srw_og_tatsumaki_zankantou_live.mp4", render_29_tatsumaki_zankantou),
+    30: ("SRW OG: Ialdabaoth Shura God", "30_srw_og_ialdabaoth_shura_god_live.mp4", render_30_ialdabaoth),
+    31: ("SRW OG: Dis Astranagant Ain Soph Aur", "31_srw_og_dis_astranagant_ain_soph_aur_live.mp4", render_31_dis_astranagant),
 }
 
 

@@ -32,7 +32,10 @@ const scenes = [
     { id: "srw_soulgain", image: "25_srw_og_soulgain_kirin_fist_4k.jpg", file: "25_srw_og_soulgain_kirin_fist_live.mp4", name: "SRW OG: SOULGAIN MARTIAL FIST" },
     { id: "srw_neo_granzon", image: "26_srw_og_neo_granzon_shukutaihou_4k.jpg", file: "26_srw_og_neo_granzon_shukutaihou_live.mp4", name: "SRW OG: NEO GRANZON SHUKUTAIHOU" },
     { id: "srw_srx", image: "27_srw_og_srx_telekinetic_blade_4k.jpg", file: "27_srw_og_srx_telekinetic_blade_live.mp4", name: "SRW OG: SRX TELEKINETIC BLADE" },
-    { id: "srw_zweizergandt", image: "28_srw_og_zweizergandt_shadow_emperor_4k.jpg", file: "28_srw_og_zweizergandt_shadow_emperor_live.mp4", name: "SRW OG: ZWEIZERGANDT SHADOW EMPEROR" }
+    { id: "srw_zweizergandt", image: "28_srw_og_zweizergandt_shadow_emperor_4k.jpg", file: "28_srw_og_zweizergandt_shadow_emperor_live.mp4", name: "SRW OG: ZWEIZERGANDT SHADOW EMPEROR" },
+    { id: "srw_tatsumaki_zankantou", image: "29_srw_og_tatsumaki_zankantou_4k.jpg", file: "29_srw_og_tatsumaki_zankantou_live.mp4", name: "SRW OG: TATSUMAKI ZANKANTOU" },
+    { id: "srw_ialdabaoth", image: "30_srw_og_ialdabaoth_shura_god_4k.jpg", file: "30_srw_og_ialdabaoth_shura_god_live.mp4", name: "SRW OG: IALDABAOTH GOUHA KISHINKEN" },
+    { id: "srw_dis_astranagant", image: "31_srw_og_dis_astranagant_ain_soph_aur_4k.jpg", file: "31_srw_og_dis_astranagant_ain_soph_aur_live.mp4", name: "SRW OG: DIS ASTRANAGANT AIN SOPH AUR" }
 ];
 
 let currentSceneIdx = 10;
